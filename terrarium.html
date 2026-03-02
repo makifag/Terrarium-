@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Terrarium</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Caveat:wght@500;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#1a1a0f;
+  --surface:#252515;
+  --panel:#2e2e1a;
+  --border:#3d3d22;
+  --accent:#8bc34a;
+  --accent2:#ffc107;
+  --accent3:#64b5f6;
+  --accent-dark:#558b2f;
+  --text:#e8e8d0;
+  --text-dim:#8a8a60;
+  --text-bright:#f5f5dc;
+  --red:#e57373;
+  --moss:#4a5e2a;
+  --dirt:#6b4c2a;
+  --sky:#1a3a5c;
+  --font:'Nunito',sans-serif;
+  --font-hand:'Caveat',cursive;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);}
+body{font-family:var(--font);color:var(--text);font-size:15px;display:flex;flex-direction:column;}
+
+/* ── HEADER ── */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px 8px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.logo{font-family:var(--font-hand);font-size:26px;color:var(--accent);letter-spacing:-1px;}
+.logo span{color:var(--accent2);font-size:20px;margin-left:4px;}
+.header-stats{display:flex;gap:12px;align-items:center;}
+.stat{font-size:13px;color:var(--text-dim);display:flex;align-items:center;gap:4px;}
+.stat b{color:var(--text-bright);}
+
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;overflow-x:hidden;position:relative;}
+.page{display:none;flex-direction:column;min-height:100%;padding-bottom:80px;}
+.page.active{display:flex;}
+
+/* ── NAV ── */
+.nav{
+  display:flex;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  flex-shrink:0;
+  padding-bottom: var(--safe-bottom);
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:10px 4px;gap:3px;
+  font-size:10px;letter-spacing:.5px;color:var(--text-dim);
+  background:none;border:none;cursor:pointer;
+  transition:color .2s;font-family:var(--font);text-transform:uppercase;
+}
+.nav-btn .icon{font-size:22px;line-height:1;}
+.nav-btn.active{color:var(--accent);}
+.nav-btn.active .icon{filter:drop-shadow(0 0 6px rgba(139,195,74,.6));}
+
+/* ══════════════════════════════
+   HOME PAGE
+══════════════════════════════ */
+.home-bg{
+  background: linear-gradient(180deg,#0d1a0a 0%,#1a2a10 40%,#2a1a08 100%);
+  padding:16px;
+}
+
+/* SHELF */
+.shelf-section{}
+.section-label{
+  font-family:var(--font-hand);font-size:18px;color:var(--accent2);
+  margin-bottom:10px;padding-left:4px;
+}
+
+.shelf{
+  background:linear-gradient(180deg,#3d2810 0%,#5c3d18 8px,#2a1a08 8px);
+  border-radius:4px;
+  padding:12px 10px 10px;
+  min-height:110px;
+  display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;
+  margin-bottom:16px;
+  border:1px solid #4a2e10;
+  box-shadow:0 4px 16px rgba(0,0,0,.5), inset 0 -3px 0 #1a0d04;
+}
+.shelf-empty{
+  width:100%;text-align:center;
+  color:var(--text-dim);font-size:13px;padding:20px 0;
+  font-family:var(--font-hand);font-size:17px;
+}
+
+/* JAR ON SHELF */
+.jar-widget{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  cursor:pointer;position:relative;
+}
+.jar-widget:active .jar-svg{transform:scale(.93);}
+.jar-svg{transition:transform .15s;}
+.jar-label{
+  font-size:10px;color:var(--text-dim);max-width:64px;
+  text-align:center;line-height:1.2;
+}
+.jar-count{
+  position:absolute;top:-4px;right:-4px;
+  background:var(--accent);color:#000;
+  font-size:9px;font-weight:800;
+  padding:1px 4px;border-radius:8px;
+}
+
+/* JAR DETAIL MODAL */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);
+  display:flex;align-items:flex-end;justify-content:center;
+  z-index:100;opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.modal-overlay.open{opacity:1;pointer-events:all;}
+.modal{
+  width:100%;max-width:500px;
+  background:var(--panel);
+  border-radius:20px 20px 0 0;
+  padding:20px 20px 40px;
+  transform:translateY(20px);
+  transition:transform .25s;
+  max-height:80vh;overflow-y:auto;
+}
+.modal-overlay.open .modal{transform:translateY(0);}
+.modal-handle{
+  width:40px;height:4px;background:var(--border);
+  border-radius:2px;margin:0 auto 16px;
+}
+.modal-title{font-family:var(--font-hand);font-size:22px;color:var(--accent2);margin-bottom:4px;}
+.modal-sub{font-size:12px;color:var(--text-dim);margin-bottom:14px;}
+.modal-section{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim);margin:12px 0 6px;}
+
+/* CONTENTS LIST */
+.content-list{display:flex;flex-direction:column;gap:6px;}
+.content-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);border:1px solid var(--border);
+  padding:8px 10px;border-radius:8px;
+}
+.content-row .emoji{font-size:20px;width:28px;text-align:center;}
+.content-row .info{flex:1;}
+.content-row .name{font-size:13px;color:var(--text-bright);}
+.content-row .sub{font-size:11px;color:var(--text-dim);}
+.content-row .remove-btn{
+  background:none;border:none;color:var(--red);
+  font-size:18px;cursor:pointer;padding:0 4px;
+}
+
+.modal-close{
+  width:100%;margin-top:16px;
+  padding:12px;background:var(--accent-dark);
+  border:none;color:#fff;font-family:var(--font);
+  font-size:15px;font-weight:700;border-radius:10px;cursor:pointer;
+}
+
+/* ══════════════════════════════
+   LOCATION PAGE
+══════════════════════════════ */
+.loc-bg-forest{background:linear-gradient(180deg,#0a1f06 0%,#122a0a 50%,#1a1a0f 100%);}
+.loc-bg-wasteland{background:linear-gradient(180deg,#1a120a 0%,#2a1e10 50%,#1a1a0f 100%);}
+
+.loc-header{
+  padding:16px;position:relative;
+  display:flex;flex-direction:column;gap:8px;
+}
+.loc-tabs{display:flex;gap:8px;margin-bottom:4px;}
+.loc-tab{
+  flex:1;padding:8px;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;text-align:center;font-size:13px;font-weight:700;
+  cursor:pointer;color:var(--text-dim);transition:all .2s;
+}
+.loc-tab.active{background:var(--moss);border-color:var(--accent);color:var(--accent);}
+
+/* JAR IN HAND indicator */
+.jar-in-hand{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(139,195,74,.1);border:1px solid rgba(139,195,74,.3);
+  border-radius:10px;padding:8px 12px;
+}
+.jar-in-hand .ih-label{font-size:11px;color:var(--text-dim);}
+.jar-in-hand .ih-name{font-size:13px;color:var(--accent);font-weight:700;}
+.jar-in-hand .ih-count{font-size:11px;color:var(--text-dim);margin-left:auto;}
+.no-jar-warning{
+  background:rgba(229,115,115,.1);border:1px solid rgba(229,115,115,.3);
+  border-radius:10px;padding:8px 12px;
+  font-size:12px;color:var(--red);display:flex;align-items:center;gap:6px;
+}
+
+/* SEARCH BUTTON */
+.search-area{padding:0 16px 16px;}
+.search-btn{
+  width:100%;padding:14px;
+  background:var(--accent-dark);border:2px solid var(--accent);
+  color:var(--text-bright);font-family:var(--font);font-size:16px;font-weight:800;
+  border-radius:12px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  transition:all .2s;
+  position:relative;overflow:hidden;
+}
+.search-btn:active{transform:scale(.97);}
+.search-btn.searching{background:#1a2a10;border-color:var(--text-dim);color:var(--text-dim);pointer-events:none;}
+.search-btn .progress-bar{
+  position:absolute;left:0;top:0;bottom:0;
+  background:rgba(139,195,74,.2);
+  transition:width 3s linear;width:0%;
+}
+.search-btn.searching .progress-bar{width:100%;}
+
+/* FOUND POOL */
+.pool-section{padding:0 16px;flex:1;}
+.pool-grid{display:flex;flex-direction:column;gap:8px;}
+
+/* FOUND CARD */
+.found-card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:12px;padding:12px;
+  display:flex;align-items:center;gap:12px;
+  animation:cardIn .3s ease both;
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.found-card .fc-emoji{font-size:32px;width:44px;text-align:center;flex-shrink:0;}
+.found-card .fc-info{flex:1;min-width:0;}
+.found-card .fc-name{font-size:15px;font-weight:700;color:var(--text-bright);}
+.found-card .fc-type{
+  display:inline-block;font-size:10px;padding:1px 6px;border-radius:4px;
+  margin:2px 0;font-weight:700;letter-spacing:.5px;
+}
+.type-plant{background:rgba(100,180,80,.2);color:#7ecb5a;}
+.type-insect{background:rgba(255,193,7,.15);color:var(--accent2);}
+.type-substrate{background:rgba(120,80,40,.3);color:#c8956a;}
+.type-other{background:rgba(100,150,200,.15);color:var(--accent3);}
+.found-card .fc-desc{font-size:11px;color:var(--text-dim);line-height:1.4;}
+.found-card .fc-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.take-btn{
+  background:var(--accent-dark);border:1px solid var(--accent);
+  color:#fff;font-family:var(--font);font-size:12px;font-weight:700;
+  padding:6px 12px;border-radius:8px;cursor:pointer;white-space:nowrap;
+  transition:all .15s;
+}
+.take-btn:active{transform:scale(.95);}
+.take-btn:disabled{background:var(--surface);border-color:var(--border);color:var(--text-dim);cursor:default;}
+.skip-btn{
+  background:none;border:1px solid var(--border);
+  color:var(--text-dim);font-family:var(--font);font-size:11px;
+  padding:5px 10px;border-radius:8px;cursor:pointer;
+}
+
+.pool-empty{
+  text-align:center;padding:40px 20px;
+  color:var(--text-dim);font-family:var(--font-hand);font-size:18px;
+  line-height:1.6;
+}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--moss);color:#fff;font-size:13px;font-weight:700;
+  padding:8px 16px;border-radius:20px;
+  opacity:0;transition:all .3s;pointer-events:none;z-index:200;
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* SELECT JAR MODAL */
+.select-jar-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+.sjar-item{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);border:2px solid var(--border);
+  padding:10px 14px;border-radius:10px;cursor:pointer;
+  transition:border-color .15s;
+}
+.sjar-item:active,.sjar-item.chosen{border-color:var(--accent);}
+.sjar-item .sj-info{flex:1;}
+.sjar-item .sj-name{font-size:14px;font-weight:700;color:var(--text-bright);}
+.sjar-item .sj-meta{font-size:11px;color:var(--text-dim);}
+
+/* scrollbar */
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- ══ DATA (edit freely) ══════════════════════════════════════════ -->
+<script>
+const DATA = {
+
+  // ── БАНКИ (containers) ───────────────────────────────────────────
+  jars: [
+    {id:"jar_glass_small",  name:"Маленькая банка",   emoji:"🫙", slots:4,  size:"small",  desc:"Простая стеклянная банка 0.5л"},
+    {id:"jar_glass_medium", name:"Банка 1л",           emoji:"🫙", slots:7,  size:"medium", desc:"Классическая банка побольше"},
+    {id:"jar_terrarium",    name:"Террариум",          emoji:"🏺", slots:15, size:"large",  desc:"Акриловый контейнер с крышкой"},
+    {id:"jar_open_bowl",    name:"Открытая чаша",      emoji:"🪴", slots:6,  size:"medium", desc:"Без крышки, для влажных видов"},
+  ],
+
+  // ── РАСТЕНИЯ ──────────────────────────────────────────────────────
+  plants: [
+    {id:"moss_common",   name:"Мох обыкновенный", emoji:"🌿", type:"plant",     slots:1, locations:["forest"],    desc:"Любит влагу и тень. Хорошо чистит воздух."},
+    {id:"fern_small",    name:"Папоротник",        emoji:"🌱", type:"plant",     slots:2, locations:["forest"],    desc:"Декоративный, нетребовательный."},
+    {id:"dandelion",     name:"Одуванчик",         emoji:"🌻", type:"plant",     slots:2, locations:["wasteland"], desc:"Живучий сорняк. Тля его любит."},
+    {id:"dry_grass",     name:"Сухая трава",       emoji:"🌾", type:"plant",     slots:1, locations:["wasteland"], desc:"Укрытие для насекомых."},
+    {id:"acorn",         name:"Жёлудь",            emoji:"🌰", type:"other",     slots:1, locations:["forest"],    desc:"Кормовая добавка. Долго лежит."},
+    {id:"bark_piece",    name:"Кусок коры",        emoji:"🪵", type:"substrate", slots:2, locations:["forest"],    desc:"Укрытие. Под ней живут разные."},
+  ],
+
+  // ── НАСЕКОМЫЕ ─────────────────────────────────────────────────────
+  insects: [
+    {id:"ant_worker",  name:"Муравей",        emoji:"🐜", type:"insect", slots:1, locations:["forest","wasteland"], desc:"Рабочий. Без матки не размножается.", speed:2},
+    {id:"woodlouse",   name:"Мокрица",        emoji:"🐛", type:"insect", slots:1, locations:["forest"],            desc:"Разлагает органику. Мирная.", speed:1},
+    {id:"springtail",  name:"Ногохвостка",    emoji:"⚪", type:"insect", slots:1, locations:["forest"],            desc:"Микроскопическая. Чистит субстрат.", speed:3},
+    {id:"ladybug",     name:"Коровка",        emoji:"🐞", type:"insect", slots:1, locations:["forest","wasteland"], desc:"Ест тлю. Активна днём.", speed:2},
+    {id:"cricket",     name:"Сверчок",        emoji:"🦗", type:"insect", slots:2, locations:["wasteland"],         desc:"Громкий. Всеяден.", speed:3},
+    {id:"snail",       name:"Улитка",         emoji:"🐌", type:"insect", slots:2, locations:["forest"],            desc:"Медленная. Ест растения.", speed:0},
+    {id:"spider_tiny", name:"Паучок",         emoji:"🕷️", type:"insect", slots:1, locations:["forest","wasteland"], desc:"Плетёт паутину. Хищник.", speed:2},
+    {id:"beetle_bark", name:"Жук-короед",     emoji:"🪲", type:"insect", slots:2, locations:["forest"],            desc:"Живёт в коре. Интересный.", speed:1},
+  ],
+
+  // ── СУБСТРАТ ──────────────────────────────────────────────────────
+  substrates: [
+    {id:"forest_soil",    name:"Лесная земля",   emoji:"🌑", type:"substrate", slots:2, locations:["forest"],    desc:"Живая почва с микроорганизмами."},
+    {id:"leaf_litter",    name:"Листовой опад",  emoji:"🍂", type:"substrate", slots:1, locations:["forest"],    desc:"Дом для многих видов."},
+    {id:"sand_fine",      name:"Песок",          emoji:"⬛", type:"substrate", slots:1, locations:["wasteland"], desc:"Дренаж. Нравится жукам."},
+    {id:"dry_soil",       name:"Сухая земля",    emoji:"🟫", type:"substrate", slots:2, locations:["wasteland"], desc:"Для ксерофитов и жуков."},
+  ],
+
+  // ── ЛОКАЦИИ ───────────────────────────────────────────────────────
+  locations: {
+    forest: {
+      id:"forest", name:"Лес",     emoji:"🌲",
+      bg:"loc-bg-forest",
+      desc:"Сырой хвойный лес. Богатый на мох и мокриц.",
+      searchTime: 3000,
+      poolSize: 5,   // сколько карточек показывать
+    },
+    wasteland: {
+      id:"wasteland", name:"Пустырь", emoji:"🌾",
+      bg:"loc-bg-wasteland",
+      desc:"Заброшенный пустырь у дороги. Сухо, солнечно.",
+      searchTime: 2500,
+      poolSize: 4,
+    }
+  }
+};
+
+// ─── GAME STATE ───────────────────────────────────────────────────
+const state = {
+  shelf: [
+    // начальные банки на полке
+    {instanceId: "s1", jarId:"jar_glass_small",  name:"Банка #1", contents:[]},
+    {instanceId: "s2", jarId:"jar_glass_medium", name:"Банка #2", contents:[]},
+  ],
+  handJarId: null,      // instanceId банки «в руках»
+  currentLoc: "forest", // текущая локация
+  foundPool: [],        // текущий пул поиска
+  searching: false,
+  day: 1,
+  money: 0,
+};
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<header class="header">
+  <div class="logo">🌿 terrarium<span>🐞</span></div>
+  <div class="header-stats">
+    <div class="stat">📅 <b id="hDay">1</b></div>
+    <div class="stat">🫙 <b id="hJars">0</b></div>
+  </div>
+</header>
+
+<div class="content">
+
+  <!-- ══ HOME PAGE ══════════════════════════════════════════════ -->
+  <div class="page active home-bg" id="page-home">
+
+    <div class="loc-header">
+      <div class="section-label">🏠 Полка</div>
+    </div>
+
+    <!-- SHELF 1 -->
+    <div style="padding:0 16px 8px">
+      <div class="shelf" id="shelf-display">
+        <div class="shelf-empty" id="shelf-empty-msg">Полка пуста — возьми банку на прогулку 🌿</div>
+      </div>
+    </div>
+
+    <!-- ADD JAR BTN -->
+    <div style="padding:0 16px 16px">
+      <button class="search-btn" style="background:var(--surface);border-color:var(--border);color:var(--text-dim);font-size:14px;" onclick="openAddJarModal()">
+        + Добавить банку на полку
+      </button>
+    </div>
+
+    <!-- INFO -->
+    <div style="padding:0 16px;font-size:12px;color:var(--text-dim);line-height:1.6;">
+      Нажми на банку чтобы посмотреть содержимое.<br>
+      В <b style="color:var(--accent)">локации</b> выбери банку «в руки» перед поиском.
+    </div>
+  </div>
+
+  <!-- ══ LOCATION PAGE ══════════════════════════════════════════ -->
+  <div class="page" id="page-location">
+
+    <div class="loc-header" id="loc-header-bg">
+      <!-- Loc tabs -->
+      <div class="loc-tabs">
+        <div class="loc-tab active" id="tab-forest"    onclick="switchLoc('forest')"   >🌲 Лес</div>
+        <div class="loc-tab"        id="tab-wasteland" onclick="switchLoc('wasteland')">🌾 Пустырь</div>
+      </div>
+      <!-- Jar in hand -->
+      <div id="jar-in-hand-area"></div>
+    </div>
+
+    <div class="search-area">
+      <button class="search-btn" id="searchBtn" onclick="startSearch()">
+        <div class="progress-bar" id="searchProgress"></div>
+        <span id="searchBtnText">🔍 Искать</span>
+      </button>
+    </div>
+
+    <div class="pool-section">
+      <div class="pool-grid" id="poolGrid">
+        <div class="pool-empty" id="poolEmpty">Нажми «Искать» чтобы осмотреть местность 🔍</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── NAV ── -->
+<nav class="nav">
+  <button class="nav-btn active" id="nav-home" onclick="goPage('home')">
+    <span class="icon">🏠</span>Дом
+  </button>
+  <button class="nav-btn" id="nav-location" onclick="goPage('location')">
+    <span class="icon">🌲</span>Локация
+  </button>
+</nav>
+
+<!-- ── JAR DETAIL MODAL ── -->
+<div class="modal-overlay" id="jarDetailModal" onclick="closeModal('jarDetailModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="jdTitle">Банка</div>
+    <div class="modal-sub" id="jdSub"></div>
+    <div class="modal-section">Содержимое</div>
+    <div class="content-list" id="jdContents"></div>
+    <button class="modal-close" onclick="closeModal('jarDetailModal')">Закрыть</button>
+  </div>
+</div>
+
+<!-- ── ADD JAR MODAL ── -->
+<div class="modal-overlay" id="addJarModal" onclick="closeModal('addJarModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Выбрать банку</div>
+    <div class="modal-sub">Добавить новый контейнер на полку</div>
+    <div class="select-jar-list" id="addJarList"></div>
+    <button class="modal-close" onclick="closeModal('addJarModal')">Отмена</button>
+  </div>
+</div>
+
+<!-- ── SELECT JAR MODAL (for location) ── -->
+<div class="modal-overlay" id="selectJarModal" onclick="closeModal('selectJarModal')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Какую банку взять?</div>
+    <div class="modal-sub">Выбери контейнер для поиска</div>
+    <div class="select-jar-list" id="selectJarList"></div>
+    <button class="modal-close" onclick="closeModal('selectJarModal')">Отмена</button>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<script>
+
+// ── helpers ──────────────────────────────────────────────────────
+
+function getJarDef(jarId){ return DATA.jars.find(j=>j.id===jarId); }
+function getShelfItem(iid){ return state.shelf.find(s=>s.instanceId===iid); }
+
+function renderHeader(){
+  document.getElementById('hDay').textContent  = state.day;
+  document.getElementById('hJars').textContent = state.shelf.length;
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+
+// ── navigation ───────────────────────────────────────────────────
+
+function goPage(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('nav-'+page).classList.add('active');
+  if(page==='home') renderShelf();
+  if(page==='location') renderLocPage();
+}
+
+// ── SHELF ─────────────────────────────────────────────────────────
+
+function jarSVG(jarDef, count){
+  // simple inline SVG jar
+  const h = jarDef.size==='large'?72:jarDef.size==='medium'?60:50;
+  const w = jarDef.size==='large'?54:jarDef.size==='medium'?46:38;
+  const fill = count>0?'rgba(100,180,80,.25)':'rgba(0,0,0,.1)';
+  return `<svg width="${w}" height="${h}" viewBox="0 0 54 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="14" y="2" width="26" height="8" rx="3" fill="#5c4020" stroke="#7a5a2a" stroke-width="1.5"/>
+    <rect x="8" y="10" width="38" height="58" rx="6" fill="${fill}" stroke="rgba(139,195,74,.4)" stroke-width="1.5"/>
+    <rect x="8" y="10" width="38" height="58" rx="6" fill="url(#jg${w})" opacity=".2"/>
+    <defs><linearGradient id="jg${w}" x1="8" y1="10" x2="46" y2="68" gradientUnits="userSpaceOnUse"><stop stop-color="white"/><stop offset="1" stop-color="transparent"/></linearGradient></defs>
+    ${count>0?`<text x="27" y="48" text-anchor="middle" font-size="18" fill="rgba(255,255,255,.6)">${jarDef.emoji}</text>`:''}
+  </svg>`;
+}
+
+function renderShelf(){
+  const shelf = document.getElementById('shelf-display');
+  const emptyMsg = document.getElementById('shelf-empty-msg');
+  // clear old jar widgets
+  shelf.querySelectorAll('.jar-widget').forEach(e=>e.remove());
+
+  if(state.shelf.length===0){
+    emptyMsg.style.display='block'; return;
+  }
+  emptyMsg.style.display='none';
+
+  state.shelf.forEach(item=>{
+    const def = getJarDef(item.jarId);
+    if(!def) return;
+    const div = document.createElement('div');
+    div.className='jar-widget';
+    div.innerHTML=`
+      ${jarSVG(def, item.contents.length)}
+      <div class="jar-label">${item.name}</div>
+      ${item.contents.length>0?`<div class="jar-count">${item.contents.length}</div>`:''}
+    `;
+    div.onclick=()=>openJarDetail(item.instanceId);
+    shelf.appendChild(div);
+  });
+}
+
+function openJarDetail(iid){
+  const item = getShelfItem(iid);
+  const def  = getJarDef(item.jarId);
+  document.getElementById('jdTitle').textContent = item.name;
+  document.getElementById('jdSub').textContent   = `${def.name} · ${item.contents.length}/${def.slots} слотов`;
+
+  const list = document.getElementById('jdContents');
+  list.innerHTML='';
+  if(item.contents.length===0){
+    list.innerHTML='<div style="color:var(--text-dim);font-size:13px;padding:10px 0;">Пусто</div>';
+  } else {
+    item.contents.forEach((c,i)=>{
+      const row=document.createElement('div');
+      row.className='content-row';
+      row.innerHTML=`
+        <div class="emoji">${c.emoji}</div>
+        <div class="info">
+          <div class="name">${c.name}</div>
+          <div class="sub">${c.desc||''}</div>
+        </div>
+        <button class="remove-btn" onclick="removeFromJar('${iid}',${i})">✕</button>
+      `;
+      list.appendChild(row);
+    });
+  }
+  openModal('jarDetailModal');
+}
+
+function removeFromJar(iid, idx){
+  const item=getShelfItem(iid);
+  item.contents.splice(idx,1);
+  openJarDetail(iid); // refresh
+  renderShelf();
+  showToast('Убрано из банки');
+}
+
+// ── ADD JAR ───────────────────────────────────────────────────────
+
+function openAddJarModal(){
+  const list=document.getElementById('addJarList');
+  list.innerHTML='';
+  DATA.jars.forEach(def=>{
+    const btn=document.createElement('div');
+    btn.className='sjar-item';
+    btn.innerHTML=`
+      <div style="font-size:28px">${def.emoji}</div>
+      <div class="sj-info">
+        <div class="sj-name">${def.name}</div>
+        <div class="sj-meta">${def.desc} · ${def.slots} слотов</div>
+      </div>
+    `;
+    btn.onclick=()=>{
+      const iid='j'+(Date.now());
+      state.shelf.push({instanceId:iid, jarId:def.id, name:def.name, contents:[]});
+      renderShelf(); renderHeader();
+      closeModal('addJarModal');
+      showToast(`${def.name} добавлена на полку`);
+    };
+    list.appendChild(btn);
+  });
+  openModal('addJarModal');
+}
+
+// ── LOCATION PAGE ─────────────────────────────────────────────────
+
+function renderLocPage(){
+  renderJarInHand();
+  renderPool();
+  const loc=DATA.locations[state.currentLoc];
+  document.getElementById('loc-header-bg').className='loc-header '+loc.bg;
+  // tab states
+  document.getElementById('tab-forest').classList.toggle('active',state.currentLoc==='forest');
+  document.getElementById('tab-wasteland').classList.toggle('active',state.currentLoc==='wasteland');
+}
+
+function switchLoc(id){
+  state.currentLoc=id;
+  state.foundPool=[];
+  renderLocPage();
+}
+
+function renderJarInHand(){
+  const area=document.getElementById('jar-in-hand-area');
+  if(!state.handJarId){
+    area.innerHTML=`
+      <div class="no-jar-warning">
+        🫙 Нет банки — <span style="cursor:pointer;text-decoration:underline;margin-left:4px" onclick="openSelectJarModal()">взять с полки</span>
+      </div>`;
+  } else {
+    const item=getShelfItem(state.handJarId);
+    const def=getJarDef(item.jarId);
+    const slots=def.slots-item.contents.length;
+    area.innerHTML=`
+      <div class="jar-in-hand" onclick="openSelectJarModal()">
+        <div style="font-size:24px">🫙</div>
+        <div>
+          <div class="ih-label">В руках</div>
+          <div class="ih-name">${item.name}</div>
+        </div>
+        <div class="ih-count">${slots} слотов свободно</div>
+      </div>`;
+  }
+}
+
+function openSelectJarModal(){
+  const list=document.getElementById('selectJarList');
+  list.innerHTML='';
+  if(state.shelf.length===0){
+    list.innerHTML='<div style="color:var(--text-dim);padding:16px 0;">На полке нет банок. Сначала добавь.</div>';
+    openModal('selectJarModal'); return;
+  }
+  state.shelf.forEach(item=>{
+    const def=getJarDef(item.jarId);
+    const free=def.slots-item.contents.length;
+    const btn=document.createElement('div');
+    btn.className='sjar-item'+(state.handJarId===item.instanceId?' chosen':'');
+    btn.innerHTML=`
+      <div style="font-size:28px">${def.emoji}</div>
+      <div class="sj-info">
+        <div class="sj-name">${item.name}</div>
+        <div class="sj-meta">${def.name} · ${item.contents.length}/${def.slots} занято · ${free} свободно</div>
+      </div>
+      ${state.handJarId===item.instanceId?'<div style="color:var(--accent);font-size:18px">✓</div>':''}
+    `;
+    btn.onclick=()=>{
+      state.handJarId=item.instanceId;
+      renderJarInHand();
+      closeModal('selectJarModal');
+      showToast(`${item.name} в руках`);
+    };
+    list.appendChild(btn);
+  });
+  openModal('selectJarModal');
+}
+
+// ── SEARCH ───────────────────────────────────────────────────────
+
+function startSearch(){
+  if(state.searching) return;
+  state.searching=true;
+  const btn=document.getElementById('searchBtn');
+  const txt=document.getElementById('searchBtnText');
+  const loc=DATA.locations[state.currentLoc];
+
+  btn.classList.add('searching');
+  txt.textContent='🔍 Ищем...';
+  // trigger CSS progress bar
+  const bar=document.getElementById('searchProgress');
+  requestAnimationFrame(()=>{ bar.style.width='100%'; });
+
+  setTimeout(()=>{
+    state.searching=false;
+    btn.classList.remove('searching');
+    txt.textContent='🔍 Искать снова';
+    bar.style.transition='none'; bar.style.width='0%';
+    requestAnimationFrame(()=>{ bar.style.transition='width 3s linear'; });
+    generatePool(loc);
+    renderPool();
+  }, loc.searchTime);
+}
+
+function generatePool(loc){
+  // gather all items available in this location
+  const all=[...DATA.plants,...DATA.insects,...DATA.substrates]
+    .filter(item=>item.locations.includes(loc.id));
+
+  // shuffle & pick
+  const shuffled=[...all].sort(()=>Math.random()-.5);
+  state.foundPool = shuffled.slice(0, loc.poolSize).map(item=>({
+    ...item,
+    taken:false,
+    skipped:false,
+    uid: Math.random().toString(36).slice(2)
+  }));
+}
+
+function renderPool(){
+  const grid=document.getElementById('poolGrid');
+  const empty=document.getElementById('poolEmpty');
+  grid.querySelectorAll('.found-card').forEach(e=>e.remove());
+
+  const visible = state.foundPool.filter(c=>!c.skipped);
+  if(visible.length===0){
+    empty.style.display='block'; return;
+  }
+  empty.style.display='none';
+
+  visible.forEach((card,i)=>{
+    const el=document.createElement('div');
+    el.className='found-card';
+    el.style.animationDelay=`${i*.07}s`;
+
+    const canTake = !card.taken && state.handJarId && (() => {
+      const item=getShelfItem(state.handJarId);
+      const def=getJarDef(item.jarId);
+      return (def.slots - item.contents.length) >= (card.slots||1);
+    })();
+
+    el.innerHTML=`
+      <div class="fc-emoji">${card.emoji}</div>
+      <div class="fc-info">
+        <div class="fc-name">${card.name}</div>
+        <div><span class="fc-type type-${card.type}">${typeLabel(card.type)}</span></div>
+        <div class="fc-desc">${card.desc}</div>
+      </div>
+      <div class="fc-actions">
+        <button class="take-btn" id="take-${card.uid}" ${card.taken||!canTake?'disabled':''} onclick="takeItem('${card.uid}')">
+          ${card.taken?'✓ Взял':'В банку'}
+        </button>
+        ${!card.taken?`<button class="skip-btn" onclick="skipItem('${card.uid}')">Мимо</button>`:''}
+      </div>
+    `;
+    grid.appendChild(el);
+  });
+}
+
+function typeLabel(t){
+  return {plant:'растение',insect:'насекомое',substrate:'субстрат',other:'прочее'}[t]||t;
+}
+
+function takeItem(uid){
+  if(!state.handJarId){ showToast('Сначала возьми банку!'); return; }
+  const card=state.foundPool.find(c=>c.uid===uid);
+  if(!card||card.taken) return;
+
+  const item=getShelfItem(state.handJarId);
+  const def=getJarDef(item.jarId);
+  const slotsNeeded=card.slots||1;
+  const slotsFree=def.slots-item.contents.length;
+
+  if(slotsFree<slotsNeeded){
+    showToast(`Не хватает места! Нужно ${slotsNeeded} слота`); return;
+  }
+
+  item.contents.push({
+    id:card.id, name:card.name, emoji:card.emoji,
+    type:card.type, desc:card.desc, slots:slotsNeeded,
+    foundAt:state.currentLoc
+  });
+  card.taken=true;
+  showToast(`${card.emoji} ${card.name} в банке!`);
+  renderPool();
+}
+
+function skipItem(uid){
+  const card=state.foundPool.find(c=>c.uid===uid);
+  if(card){ card.skipped=true; renderPool(); }
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+renderShelf();
+renderHeader();
+</script>
+</body>
+</html>
