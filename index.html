@@ -1,0 +1,1837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Terrarium</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Caveat:wght@500;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#141a0c;--surface:#1c2210;--panel:#232b14;
+  --border:#323d1c;--border2:#475428;
+  --accent:#8fbe3a;--accent-dark:#587824;--accent-glow:rgba(143,190,58,.2);
+  --accent2:#dda83c;--accent3:#6ab0d0;--red:#c86060;
+  --text:#d4d8b8;--text-dim:#606840;--text-bright:#ecefd8;
+  --font:'Nunito',sans-serif;--font-hand:'Caveat',cursive;
+  --safe-bottom:env(safe-area-inset-bottom,0px);--max-w:480px;
+}
+html,body{height:100%;overflow:hidden;background:#0c0e08;}
+body{font-family:var(--font);color:var(--text);font-size:14px;display:flex;flex-direction:column;align-items:center;}
+.header{width:100%;display:grid;grid-template-columns:auto 1fr;align-items:center;padding:8px 14px 7px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;z-index:10;transition:background .8s,border-color .8s;gap:0 12px;}
+.header.night{background:#0c0e1a;border-color:#1a1e2e;}
+.logo{font-family:var(--font-hand);font-size:20px;color:var(--accent);letter-spacing:-1px;line-height:1.1;grid-row:span 2;}
+.logo em{color:var(--accent2);font-style:normal;display:block;font-size:18px;}
+.hrow{display:flex;align-items:center;gap:8px;}
+.hrow-top{justify-content:flex-end;}
+.hrow-bot{justify-content:flex-end;}
+.hstat{font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:3px;}
+.hstat b{color:var(--text-bright);font-size:13px;}
+.hday{font-size:12px;color:var(--text-dim);}
+.hxp-wrap{width:52px;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
+.hxp-bar{height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width .5s;}
+.sleep-btn{display:flex;align-items:center;gap:3px;background:rgba(106,176,208,.1);border:1px solid rgba(106,176,208,.25);color:var(--accent3);font-family:var(--font);font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;cursor:pointer;transition:all .18s;}
+.sleep-btn:hover{background:rgba(106,176,208,.2);}
+.sleep-btn:active{transform:scale(.92);}
+.sleep-btn.hide{display:none;}
+.content{flex:1;overflow:hidden;position:relative;width:100%;max-width:var(--max-w);background:var(--bg);}
+.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;display:none;flex-direction:column;}
+.page.active{display:flex;}
+.nav{width:100%;display:flex;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;padding-bottom:var(--safe-bottom);z-index:10;}
+.nav-inner{display:flex;width:100%;max-width:var(--max-w);margin:0 auto;}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;gap:2px;font-size:10px;letter-spacing:.3px;color:var(--text-dim);background:none;border:none;cursor:pointer;transition:color .2s;font-family:var(--font);text-transform:uppercase;}
+.nav-btn .ni{font-size:20px;line-height:1;}
+.nav-btn.active{color:var(--accent);}
+.nav-btn.active .ni{filter:drop-shadow(0 0 5px rgba(143,190,58,.6));}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+@keyframes pulseDst{0%,100%{opacity:1;}50%{opacity:.5;}}
+.section-label{font-family:var(--font-hand);font-size:19px;color:var(--accent2);margin-bottom:8px;padding-left:2px;}
+.section-wrap{padding:14px 14px 0;}
+.home-page{background:linear-gradient(180deg,#0d1208,#141a0c);padding-bottom:110px;transition:background .8s;}
+.home-page.night-bg{background:linear-gradient(180deg,#060810,#0c0e18);}
+.shelf{background:linear-gradient(180deg,#4a2e10 0%,#6a4420 6px,#2e1a08 6px);border-radius:3px;padding:10px 10px 14px;min-height:80px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;border:1px solid #5a3818;box-shadow:0 6px 20px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,220,120,.06);}
+.shelf-empty-msg{width:100%;text-align:center;padding:10px 0 4px;font-family:var(--font-hand);font-size:16px;color:var(--text-dim);}
+.shelf-jar{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:transform .15s;position:relative;}
+.shelf-jar:active{transform:scale(.9);}
+.shelf-jar.is-open .sj-body{box-shadow:0 0 0 2px var(--accent),0 0 10px var(--accent-glow);}
+.sj-lid{border-radius:3px 3px 0 0;background:linear-gradient(90deg,#3a2008,#6a4020,#3a2008);border:1px solid #4a2e10;margin-bottom:-1px;position:relative;z-index:1;}
+.sj-body{border-radius:2px 2px 5px 5px;border:1.5px solid var(--border2);background:rgba(20,26,12,.7);position:relative;z-index:0;transition:box-shadow .2s;overflow:hidden;}
+.sj-fill{position:absolute;bottom:0;left:0;right:0;border-radius:0 0 4px 4px;background:linear-gradient(180deg,rgba(50,80,20,0),rgba(50,80,20,.4));transition:height .3s;}
+.sj-name{font-size:10px;color:var(--text-dim);max-width:70px;text-align:center;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.shelf-slot-empty{display:flex;flex-direction:column;align-items:center;gap:3px;opacity:.3;}
+.sse-body{width:38px;height:52px;border-radius:2px 2px 5px 5px;border:1.5px dashed var(--border2);background:rgba(255,255,255,.02);}
+.sj-count{position:absolute;top:-5px;right:-5px;background:var(--accent);color:#000;font-size:9px;font-weight:800;padding:1px 4px;border-radius:6px;}
+.open-jar-view{margin:10px 14px 0;background:var(--panel);border:1px solid var(--border2);border-radius:12px;padding:12px;animation:fadeUp .22s ease;}
+.ojv-header{display:flex;align-items:center;margin-bottom:4px;gap:6px;}
+.ojv-title{font-family:var(--font-hand);font-size:17px;color:var(--accent2);flex:1;min-width:0;display:flex;align-items:center;gap:5px;cursor:pointer;}
+.ojv-title-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ojv-title-meta{font-size:11px;color:var(--text-dim);font-family:var(--font);flex-shrink:0;}
+.ojv-edit{font-size:13px;opacity:.3;flex-shrink:0;transition:opacity .15s;}
+.ojv-title:hover .ojv-edit{opacity:.65;}
+.ojv-acts{display:flex;gap:5px;align-items:center;flex-shrink:0;}
+.ojv-storage-btn{display:flex;align-items:center;gap:4px;background:rgba(221,168,60,.1);border:1px solid rgba(221,168,60,.35);color:var(--accent2);font-family:var(--font);font-size:11px;font-weight:700;padding:5px 10px;border-radius:7px;cursor:pointer;white-space:nowrap;}
+.ojv-storage-btn:active{transform:scale(.95);}
+.ojv-btn{background:var(--surface);border:1px solid var(--border2);color:var(--text-dim);font-size:12px;padding:5px 9px;border-radius:7px;cursor:pointer;font-family:var(--font);}
+.ojv-btn:hover{border-color:var(--accent);color:var(--accent);}
+.ojv-close{background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0;}
+.ojv-hint{font-size:11px;color:var(--text-dim);margin-bottom:8px;margin-top:2px;}
+.move-banner{background:rgba(106,176,208,.07);border:1px solid rgba(106,176,208,.2);border-radius:8px;padding:7px 10px;font-size:12px;color:var(--accent3);text-align:center;margin-bottom:8px;}
+.substrate-bar{border-radius:7px;margin-bottom:6px;display:flex;align-items:center;gap:8px;padding:7px 10px;cursor:pointer;transition:box-shadow .15s;position:relative;overflow:hidden;min-height:36px;}
+.substrate-bar:active{filter:brightness(.9);}
+.substrate-bar.sub-soil{background:linear-gradient(90deg,#2a1a08,#3a2410);}
+.substrate-bar.sub-sand{background:linear-gradient(90deg,#2e2208,#42320e);}
+.substrate-bar.sub-leaf{background:linear-gradient(90deg,#252310,#363414);}
+.substrate-bar.sub-bark{background:linear-gradient(90deg,#1a1006,#2e2010);}
+.substrate-bar.sub-empty{background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.08);}
+.sb-emoji{font-size:16px;flex-shrink:0;}
+.sb-name{font-size:13px;font-weight:700;color:var(--text-bright);flex:1;}
+.sb-hint{font-size:10px;color:var(--text-dim);flex:1;}
+.sb-remove{background:none;border:none;font-size:14px;opacity:.35;cursor:pointer;padding:2px 4px;flex-shrink:0;line-height:1;}
+.sb-remove:hover{opacity:.8;}
+.cell{border-radius:7px;position:relative;cursor:pointer;transition:transform .12s,box-shadow .15s;overflow:hidden;flex-shrink:0;background:rgba(8,10,6,.55);}
+.cell:active{transform:scale(.9);}
+.cell-cre{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.cell.move-src{box-shadow:0 0 0 2px var(--accent2),0 0 10px rgba(221,168,60,.3);}
+.cell.move-dst{box-shadow:0 0 0 2px var(--accent3),0 0 8px rgba(106,176,208,.25);animation:pulseDst 1.1s ease-in-out infinite;}
+.income-ticker{margin:10px 14px 0;display:flex;align-items:center;gap:8px;background:rgba(143,190,58,.06);border:1px solid rgba(143,190,58,.18);border-radius:9px;padding:8px 12px;}
+.it-icon{font-size:20px;}
+.it-info{flex:1;}
+.it-label{font-size:10px;color:var(--text-dim);}
+.it-amount{font-size:14px;font-weight:800;color:var(--accent);}
+.it-btn{background:var(--accent-dark);border:1px solid var(--accent);color:#e8f0d0;font-family:var(--font);font-size:12px;font-weight:800;padding:6px 14px;border-radius:8px;cursor:pointer;}
+.it-btn:active{transform:scale(.95);}
+.it-btn:disabled{background:var(--surface);border-color:var(--border);color:var(--text-dim);cursor:default;}
+.storage-shelf{background:rgba(0,0,0,.22);border:1px solid var(--border);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:4px;}
+.storage-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.storage-row:last-child{border-bottom:none;}
+.sr-icon{font-size:16px;width:22px;text-align:center;}
+.sr-info{flex:1;}
+.sr-name{font-size:12px;color:var(--text-bright);font-weight:700;}
+.sr-meta{font-size:10px;color:var(--text-dim);}
+.sr-btn{background:var(--accent-dark);border:1px solid var(--accent);color:#e8f0d0;font-size:10px;font-weight:700;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:var(--font);}
+.sr-btn:active{transform:scale(.95);}
+.empty-msg{font-family:var(--font-hand);font-size:15px;color:var(--text-dim);padding:2px;}
+.inv-row{display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(0,0,0,.2);border-radius:6px;border:1px solid var(--border);margin-bottom:4px;}
+.inv-emoji{font-size:16px;width:22px;text-align:center;}
+.inv-info{flex:1;}
+.inv-name{font-size:12px;color:var(--text-bright);font-weight:700;}
+.inv-desc{font-size:10px;color:var(--text-dim);}
+.inv-qty{font-size:11px;color:var(--accent);font-weight:800;background:rgba(143,190,58,.12);padding:1px 6px;border-radius:4px;}
+.cpop-ov{position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:150;opacity:0;pointer-events:none;transition:opacity .2s;}
+.cpop-ov.open{opacity:1;pointer-events:all;}
+.cpop{position:absolute;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:var(--max-w);background:var(--panel);border-radius:18px 18px 0 0;padding:14px 14px calc(18px + var(--safe-bottom));transition:transform .26s cubic-bezier(.32,.72,0,1);}
+.cpop-ov.open .cpop{transform:translateX(-50%) translateY(0);}
+.cpop-handle{width:36px;height:3px;background:var(--border2);border-radius:2px;margin:0 auto 12px;}
+.cpop-info{background:var(--surface);border:1px solid var(--border2);border-radius:9px;padding:10px 12px;display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.cpop-info-icon{font-size:26px;flex-shrink:0;}
+.cpop-info-text{flex:1;}
+.cpop-info-label{font-size:9px;color:var(--text-dim);letter-spacing:.8px;text-transform:uppercase;}
+.cpop-info-name{font-size:14px;font-weight:700;color:var(--text-bright);}
+.cpop-info-name.dim{color:var(--text-dim);font-style:italic;font-weight:400;}
+.cpop-info-val{font-size:10px;color:var(--accent2);margin-top:2px;}
+.cpop-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.cpa{background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:all .15s;}
+.cpa:active{transform:scale(.94);}
+.cpa:hover{border-color:var(--accent2);}
+.cpa.red:hover{border-color:var(--red);}
+.cpa.dis{opacity:.3;cursor:default;pointer-events:none;}
+.cpa.wide{grid-column:span 2;}
+.cpa-icon{font-size:22px;}
+.cpa-label{font-size:11px;color:var(--text-dim);text-align:center;line-height:1.3;}
+.loc-page{padding-bottom:90px;}
+.dest-screen{display:flex;flex-direction:column;padding:14px;gap:10px;}
+.dest-title{font-family:var(--font-hand);font-size:22px;color:var(--accent2);}
+.dest-sub{font-size:12px;color:var(--text-dim);line-height:1.5;}
+.dest-card{background:var(--panel);border:1px solid var(--border2);border-radius:12px;padding:12px;display:flex;gap:10px;align-items:center;cursor:pointer;transition:border-color .18s,background .18s;position:relative;overflow:hidden;}
+.dest-card:active{transform:scale(.98);}
+.dest-card.locked{opacity:.4;cursor:default;}
+.dest-card.chosen{border-color:var(--accent);background:rgba(143,190,58,.07);}
+.dest-bg{position:absolute;inset:0;opacity:.06;font-size:72px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;pointer-events:none;}
+.dest-icon{font-size:28px;flex-shrink:0;position:relative;z-index:1;}
+.dest-info{flex:1;position:relative;z-index:1;}
+.dest-name{font-size:15px;font-weight:800;color:var(--text-bright);}
+.dest-desc{font-size:11px;color:var(--text-dim);margin-top:2px;line-height:1.4;}
+.dest-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;}
+.tag{font-size:10px;padding:2px 7px;border-radius:5px;font-weight:700;}
+.tag-time{background:rgba(100,176,208,.15);color:var(--accent3);}
+.tag-lock{background:rgba(200,96,96,.12);color:var(--red);}
+.dest-arr{font-size:18px;color:var(--text-dim);position:relative;z-index:1;}
+.go-btn{padding:13px;width:100%;background:var(--accent-dark);border:2px solid var(--accent);color:var(--text-bright);font-family:var(--font);font-size:15px;font-weight:800;border-radius:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+.go-btn:active{transform:scale(.97);}
+.go-btn:disabled{background:var(--surface);border-color:var(--border);color:var(--text-dim);cursor:default;}
+.inside-loc{display:flex;flex-direction:column;flex:1;}
+.loc-topbar{padding:10px 14px 8px;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.28);border-bottom:1px solid var(--border);}
+.loc-back{background:none;border:1px solid var(--border2);color:var(--text-dim);font-size:12px;padding:5px 10px;border-radius:7px;cursor:pointer;font-family:var(--font);}
+.loc-title-bar{flex:1;}
+.loc-name{font-family:var(--font-hand);font-size:18px;color:var(--accent2);line-height:1;}
+.loc-sub{font-size:11px;color:var(--text-dim);}
+.loc-hand-strip{margin:8px 14px 0;display:flex;align-items:center;gap:8px;background:rgba(143,190,58,.06);border:1px solid rgba(143,190,58,.18);border-radius:9px;padding:7px 10px;cursor:pointer;}
+.loc-hand-strip.empty{background:rgba(200,96,96,.05);border-color:rgba(200,96,96,.18);}
+.lhs-emoji{font-size:20px;}
+.lhs-info{flex:1;}
+.lhs-name{font-size:12px;font-weight:700;}
+.lhs-ok{color:var(--accent);}
+.lhs-bad{color:var(--red);}
+.lhs-sub{font-size:10px;color:var(--text-dim);}
+.lhs-slots{font-size:11px;color:var(--text-dim);}
+.loc-search-wrap{padding:8px 14px 4px;}
+.loc-search-btn{width:100%;padding:11px;background:var(--accent-dark);border:2px solid var(--accent);color:var(--text-bright);font-family:var(--font);font-size:14px;font-weight:800;border-radius:10px;cursor:pointer;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:8px;}
+.loc-search-btn:active{transform:scale(.97);}
+.loc-search-btn.busy{background:var(--surface);border-color:var(--border);color:var(--text-dim);pointer-events:none;}
+.lsb-bar{position:absolute;left:0;top:0;bottom:0;background:rgba(143,190,58,.15);width:0;}
+.loc-grid-wrap{padding:6px 14px 16px;}
+.loc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;}
+.loc-grid-empty-msg{grid-column:span 4;color:var(--text-dim);font-family:var(--font-hand);font-size:17px;padding:24px 0;text-align:center;}
+.loc-card{background:var(--panel);border:1px solid var(--border2);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:4px;animation:fadeUp .2s ease both;position:relative;}
+.loc-card.lc-empty{background:rgba(0,0,0,.12);border-color:rgba(255,255,255,.03);pointer-events:none;}
+.loc-card.lc-jar{border-color:rgba(221,168,60,.35);background:rgba(221,168,60,.06);}
+.loc-card.lc-substrate{border-color:rgba(180,140,60,.3);background:rgba(60,40,10,.4);}
+.lc-thumb{width:100%;aspect-ratio:1;border-radius:5px;position:relative;overflow:hidden;background:rgba(8,10,6,.55);}
+.lc-thumb-cre{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.lc-sub-name{position:absolute;bottom:0;left:0;right:0;font-size:9px;font-weight:700;color:rgba(255,255,255,.5);text-align:center;padding:2px;background:rgba(0,0,0,.3);}
+.lc-label{font-size:9px;font-weight:700;color:var(--text-dim);text-align:center;line-height:1.2;padding:0 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.lc-take{background:var(--accent-dark);border:1px solid var(--accent);color:#fff;font-family:var(--font);font-size:11px;font-weight:700;padding:3px 0;border-radius:5px;cursor:pointer;width:100%;text-align:center;}
+.lc-take:active{transform:scale(.93);}
+.lc-take:disabled{background:var(--surface);border-color:var(--border);color:var(--text-dim);cursor:default;}
+.shop-page{background:linear-gradient(180deg,#0c1008,#141a0c);padding-bottom:100px;}
+.shop-section{padding:14px 14px 0;}
+.shop-items{display:flex;flex-direction:column;gap:8px;}
+.shop-item{background:var(--panel);border:1px solid var(--border2);border-radius:11px;padding:11px 12px;display:flex;align-items:center;gap:10px;}
+.si-icon{font-size:26px;width:34px;text-align:center;flex-shrink:0;}
+.si-info{flex:1;}
+.si-name{font-size:14px;font-weight:700;color:var(--text-bright);}
+.si-desc{font-size:11px;color:var(--text-dim);margin-top:1px;line-height:1.4;}
+.si-price{font-size:12px;color:var(--accent2);font-weight:800;margin-top:3px;}
+.si-buy{background:var(--accent-dark);border:1px solid var(--accent);color:#fff;font-family:var(--font);font-size:12px;font-weight:700;padding:7px 13px;border-radius:8px;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.si-buy:active{transform:scale(.94);}
+.si-buy:disabled{background:var(--surface);border-color:var(--border);color:var(--text-dim);cursor:default;}
+.shop-cat-label{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);padding:4px 2px 6px;margin-top:6px;}
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;}
+.modal-ov.open{opacity:1;pointer-events:all;}
+.modal{width:100%;max-width:var(--max-w);background:var(--panel);border-radius:18px 18px 0 0;padding:16px 16px 36px;transform:translateY(14px);transition:transform .22s;max-height:78vh;overflow-y:auto;}
+.modal-ov.open .modal{transform:translateY(0);}
+.modal-handle{width:36px;height:3px;background:var(--border2);border-radius:2px;margin:0 auto 14px;}
+.modal-title{font-family:var(--font-hand);font-size:21px;color:var(--accent2);margin-bottom:3px;}
+.modal-sub{font-size:12px;color:var(--text-dim);margin-bottom:12px;}
+.modal-close{width:100%;margin-top:14px;padding:11px;background:var(--accent-dark);border:none;color:#fff;font-family:var(--font);font-size:14px;font-weight:700;border-radius:10px;cursor:pointer;}
+.jpi-list{display:flex;flex-direction:column;gap:7px;}
+.jpi{display:flex;align-items:center;gap:10px;background:var(--surface);border:2px solid var(--border);padding:10px 12px;border-radius:10px;cursor:pointer;}
+.jpi:active{transform:scale(.98);}
+.jpi.chosen{border-color:var(--accent);}
+.jpi-info{flex:1;}
+.jpi-name{font-size:14px;font-weight:700;color:var(--text-bright);}
+.jpi-meta{font-size:11px;color:var(--text-dim);}
+.rename-input{width:100%;background:var(--surface);border:1.5px solid var(--border2);color:var(--text-bright);font-family:var(--font-hand);font-size:20px;padding:10px 12px;border-radius:10px;outline:none;margin-bottom:12px;display:block;}
+.rename-input:focus{border-color:var(--accent);}
+.rename-ok{width:100%;padding:11px;background:var(--accent-dark);border:1px solid var(--accent);color:#fff;font-family:var(--font);font-size:14px;font-weight:700;border-radius:10px;cursor:pointer;}
+.toast{position:fixed;bottom:82px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--accent-dark);color:#e8f0d0;font-size:13px;font-weight:700;padding:7px 16px;border-radius:20px;white-space:nowrap;border:1px solid var(--accent);opacity:0;transition:all .25s;pointer-events:none;z-index:400;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">🌿 terrarium<em>🐞 game</em></div>
+  <div class="hrow hrow-top">
+    <div class="hstat">🕐<b id="hTime">08:00</b></div>
+    <div class="hday" id="hDay">Day 1</div>
+    <button class="sleep-btn hide" id="sleepBtn" onclick="doSleep()">⏩ Wait</button>
+    <button class="sleep-btn" onclick="openSettingsModal()" style="background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.1);color:var(--text-dim);font-size:14px;padding:3px 7px;">⚙️</button>
+  </div>
+  <div class="hrow hrow-bot">
+    <div class="hstat">🪙<b id="hCoins">25</b></div>
+    <div class="hstat" style="gap:5px">
+      <span style="font-size:11px;color:var(--text-dim)">Lv.<b id="hLevel" style="color:var(--accent)">1</b></span>
+      <div class="hxp-wrap"><div class="hxp-bar" id="hXpBar"></div></div>
+    </div>
+  </div>
+</header>
+
+<div class="content">
+  <div class="page active home-page" id="page-home">
+    <div class="section-wrap">
+      <div class="section-label">🏠 Shelf</div>
+      <div class="shelf" id="shelfEl"></div>
+    </div>
+    <div class="income-ticker" id="incomeTicker" style="display:none">
+      <div class="it-icon">🪙</div>
+      <div class="it-info">
+        <div class="it-label"></div>
+        <div class="it-amount">+0 🪙</div>
+      </div>
+      <button class="it-btn" onclick="collectIncome()" disabled>Collect</button>
+    </div>
+    <div id="openJarArea"></div>
+    <div class="section-wrap" style="margin-top:14px">
+      <div class="section-label">📦 Storage</div>
+      <div class="storage-shelf" id="storageShelf"><div class="empty-msg">Storage is empty</div></div>
+    </div>
+    <div class="section-wrap" style="margin-top:14px">
+      <div class="section-label">🎒 Inventory</div>
+      <div id="inventoryList"><div class="empty-msg" style="padding:0 2px">Empty</div></div>
+    </div>
+  </div>
+
+  <div class="page loc-page" id="page-location" style="background:var(--bg);">
+    <div id="locContent"></div>
+  </div>
+
+  <div class="page" id="page-deals" style="background:var(--bg);overflow-y:auto;"></div>
+
+  <div class="page" id="page-insect" style="background:var(--bg);padding-bottom:100px;">
+    <div style="padding:14px 14px 0">
+      <div class="section-label">📖 Atlas</div>
+    </div>
+    <div id="insectList" style="padding:0 14px 14px;"></div>
+  </div>
+
+  <div class="page shop-page" id="page-shop">
+    <div class="shop-section">
+      <div class="section-label">🛒 Shop</div>
+      <div class="shop-items" id="shopItems"></div>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <button class="nav-btn active" id="nav-home"     onclick="goPage('home')"><span class="ni">🏠</span>Home</button>
+    <button class="nav-btn"        id="nav-location" onclick="goPage('location')"><span class="ni">🌿</span>Outside</button>
+    <button class="nav-btn"        id="nav-shop"     onclick="goPage('shop')"><span class="ni">🛒</span>Shop</button>
+    <button class="nav-btn"        id="nav-deals"    onclick="goPage('deals')"><span class="ni">🤝</span>Deals</button>
+    <button class="nav-btn"        id="nav-insect"   onclick="goPage('insect')"><span class="ni">📖</span>Atlas</button>
+  </div>
+</nav>
+
+<div class="cpop-ov" id="cpopOv" onclick="closeCpop()">
+  <div class="cpop" onclick="event.stopPropagation()">
+    <div class="cpop-handle"></div>
+    <div id="cpopContent"></div>
+  </div>
+</div>
+
+<div class="cpop-ov" id="subpopOv" onclick="closeSubpop()">
+  <div class="cpop" onclick="event.stopPropagation()">
+    <div class="cpop-handle"></div>
+    <div id="subpopContent"></div>
+  </div>
+</div>
+
+<div class="modal-ov" id="modalPickJar" onclick="closeModal('modalPickJar')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Take with you</div>
+    <div class="modal-sub">Choose a jar to collect</div>
+    <div class="jpi-list" id="pickJarList"></div>
+    <button id="pickJarNoJar" style="display:none;width:100%;margin-top:8px;padding:11px;background:rgba(200,96,96,.1);border:1px solid rgba(200,96,96,.3);color:var(--red);font-family:var(--font);font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;">🤲 No jar</button>
+    <button class="modal-close" onclick="closeModal('modalPickJar')">Cancel</button>
+  </div>
+</div>
+
+<div class="modal-ov" id="modalXfer" onclick="closeModal('modalXfer')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Transfer to...</div>
+    <div class="modal-sub" id="xferSub"></div>
+    <div class="jpi-list" id="xferList"></div>
+    <button class="modal-close" onclick="closeModal('modalXfer')">Cancel</button>
+  </div>
+</div>
+
+<div class="modal-ov" id="modalFeed" onclick="closeModal('modalFeed')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Feeding 🥣</div>
+    <div class="modal-sub">What to feed?</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px" id="feedOptions"></div>
+    <button class="modal-close" onclick="closeModal('modalFeed')">Cancel</button>
+  </div>
+</div>
+
+<div class="modal-ov" id="modalSettings" onclick="closeModal('modalSettings')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⚙️ Settings</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px;">
+      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:12px;">
+        <div style="font-size:13px;font-weight:700;color:var(--text-bright);margin-bottom:2px;">Day {{hDay}} · {{hTime}}</div>
+        <div style="font-size:11px;color:var(--text-dim);">Shelf: {{shelfSlots}} slots · Lv. {{level}}</div>
+      </div>
+      <div id="settingsResetArea">
+        <button onclick="showResetConfirm()" style="width:100%;padding:11px;background:rgba(255,255,255,.03);border:1px solid var(--border2);color:var(--text-dim);font-family:var(--font);font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;">🗑 Reset progress</button>
+      </div>
+    </div>
+    <button class="modal-close" onclick="closeModal('modalSettings')">Close</button>
+  </div>
+</div>
+
+<div class="modal-ov" id="modalRename"  onclick="closeModal('modalRename')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Rename</div>
+    <input class="rename-input" id="renameInput" maxlength="22" placeholder="Jar name..."/>
+    <button class="rename-ok" id="renameOk">Save</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ════ DATA ════════════════════════════════════════════════════════ */
+var DATA = {
+  jars:[
+    {id:"jar_small",    name:"Jar 0.5л",  emoji:"🫙", cols:2, rows:2, maxSubstrate:1},
+    {id:"jar_medium",   name:"Jar 1л",    emoji:"🫙", cols:2, rows:3, maxSubstrate:1},
+    {id:"jar_terrarium",name:"Terrarium",   emoji:"🪟", cols:4, rows:2, maxSubstrate:2},
+  ],
+  substrates:[
+    {id:"soil", name:"Soil",         emoji:"🌱", css:"sub-soil", locs:["wasteland","park","forest"]},
+    {id:"sand", name:"Sand",         emoji:"⛱",  css:"sub-sand", locs:["wasteland"]},
+    {id:"leaf", name:"Leaf litter", emoji:"🍂", css:"sub-leaf", locs:["park","forest"]},
+    {id:"bark", name:"Bark",          emoji:"🪵", css:"sub-bark", locs:["forest"]},
+  ],
+  decorations:[
+    {id:"bark",  name:"Bark",   emoji:"🪵", locs:["forest"]},
+    {id:"rock",  name:"Rock", emoji:"🪨", locs:["wasteland","park"]},
+  ],
+  // level_req: min level for creature to appear in spawn pool
+  creatures:[
+    {id:"ant",        name:"Ant",     emoji:"🐜", locs:["wasteland","park","forest"], value:1, level_req:1},
+    {id:"woodlouse",  name:"Woodlouse",     emoji:"🐛", locs:["wasteland","park","forest"], value:1, level_req:1},
+    {id:"springtail", name:"Springtail", emoji:"⚪", locs:["park","forest"],             value:1, level_req:1},
+    {id:"ladybug",    name:"Ladybug",     emoji:"🐞", locs:["wasteland","park","forest"], value:2, level_req:1},
+    {id:"cricket",    name:"Cricket",     emoji:"🦗", locs:["wasteland","park"],          value:2, level_req:2},
+    {id:"snail",      name:"Snail",      emoji:"🐌", locs:["park","forest"],             value:2, level_req:2},
+    {id:"worm",       name:"Worm",      emoji:"🪱", locs:["park","forest"],             value:1, level_req:2},
+    {id:"spider",     name:"Spider",      emoji:"🕷️", locs:["park","forest"],             value:5, level_req:4},
+    {id:"beetle",     name:"Beetle",         emoji:"🪲", locs:["forest"],                    value:5, level_req:5},
+  ],
+  locations:[
+    {id:"wasteland",name:"Wasteland",emoji:"🧱",desc:"Abandoned lot near home.",         timeCost:10,locked:false,noJarNeeded:true,bg:"linear-gradient(180deg,#100c04,#1a1408)",searchTime:2500,coinChance:.10,jarChance:.04,substrateChance:.12,decoChance:.04,plantChance:.04,creatureChance:.50,density:3},
+    {id:"park",     name:"Park",   emoji:"🌳",desc:"City park, diverse life.",timeCost:30,locked:false,bg:"linear-gradient(180deg,#081408,#0e1e0c)",searchTime:2800,jarChance:0,   substrateChance:.14,decoChance:.08,plantChance:.14,creatureChance:.62,density:4},
+    {id:"forest",   name:"Forest",    emoji:"🌲",desc:"Rich soil, rare species.",         timeCost:60,locked:true, bg:"linear-gradient(180deg,#040e02,#0a1806)",searchTime:3200,jarChance:.01,substrateChance:.16,decoChance:.10,plantChance:.20,creatureChance:.74,density:5},
+  ],
+  plants:[
+    {id:"moss_plant", name:"Moss",        emoji:"🌿", locs:["park","forest"],   value:0, level_req:1, substrate:"soil", humidity:"70-90%", diet:"water",         bio:"Carpets the ground in green. Retains moisture, creates a microclimate."},
+    {id:"fern",       name:"Fern", emoji:"🌱", locs:["forest"],           value:0, level_req:2, substrate:"soil", humidity:"60-80%", diet:"water",         bio:"Loves shade and humidity. Decorates the terrarium with lush greenery."},
+    {id:"succulent",  name:"Succulent",  emoji:"🪴", locs:["wasteland"],        value:0, level_req:1, substrate:"sand", humidity:"20-40%", diet:"rare watering", bio:"Stores water in leaves. Ideal for dry terrariums."},
+    {id:"mushroom",   name:"Mushroom",       emoji:"🍄", locs:["forest","park"],    value:0, level_req:3, substrate:"bark", humidity:"80-95%", diet:"organics",     bio:"Decomposes organics alongside springtails. Loves damp and shade."},
+    {id:"grass",      name:"Grass",      emoji:"🌾", locs:["wasteland","park"], value:0, level_req:1, substrate:"soil", humidity:"40-65%", diet:"water",         bio:"Low-maintenance. Serves as shelter and food for snails and woodlice."},
+  ],
+  insectData:{
+    ant:       {substrate:"soil", humidity:"50-70%", diet:"syrup, small insects", foods:["syrup"],          friend:"springtail", foe:"spider",   bio:"Live in colonies. Janitors of the terrarium — clean up food scraps."},
+    woodlouse: {substrate:"soil", humidity:"60-80%", diet:"rotting leaves, food scraps", foods:["leaves"],        friend:"springtail", foe:"spider",   bio:"Перерабатывают органику. Любят влажный грунт и укрытия of bark."},
+    springtail:{substrate:"soil", humidity:"70-90%", diet:"mold, fungi, organics", foods:["leaves"],        friend:"woodlouse",  foe:"spider",   bio:"Microscopic cleaners. Jump using a furcula on their abdomen."},
+    ladybug:   {substrate:"leaf", humidity:"40-60%", diet:"aphids, syrup",               foods:["syrup"],          friend:"ant",        foe:"spider",   bio:"Hunt aphids. Overwinter in torpor under leaves."},
+    cricket:   {substrate:"sand", humidity:"30-50%", diet:"leaves, syrup, meat",      foods:["leaves","syrup","meat"], friend:"worm",       foe:"spider",   bio:"Chirp at night. Heat-loving, intolerant of cold and damp."},
+    snail:     {substrate:"soil", humidity:"70-90%", diet:"leaves, veggies, calcium",   foods:["leaves"],         friend:"woodlouse",  foe:"cricket",  bio:"Active at night and after rain. Need calcium for their shell."},
+    worm:      {substrate:"soil", humidity:"70-90%", diet:"soil organics",         foods:["leaves"],         friend:"springtail", foe:"cricket",  bio:"Aerate and enrich soil. Cannot stand dryness or direct light."},
+    spider:    {substrate:"bark", humidity:"40-65%", diet:"live insects",          foods:["meat"],           friend:null,         foe:"ant",      bio:"Solitary hunters. Spin webs or actively pursue prey."},
+    beetle:    {substrate:"bark", humidity:"50-70%", diet:"rotting wood, leaves",foods:["leaves"],         friend:"woodlouse",  foe:"spider",   bio:"Live in rotting bark. Larvae develop in wood for months."},
+  },
+  shopItems:[
+    {id:"buy_jar_s", name:"Jar 0.5л",  emoji:"🫙",desc:"Small glass container.",price:5, cat:"container",jarId:"jar_small"},
+    {id:"buy_jar_m", name:"Jar 1л",    emoji:"🫙",desc:"Classic jar with lid.",  price:10,cat:"container",jarId:"jar_medium"},
+    {id:"buy_jar_t", name:"Terrarium",   emoji:"🪟",desc:"Acrylic container 4×2.",       price:35,cat:"container",jarId:"jar_terrarium"},
+    {id:"buy_syrup", name:"Syrup",       emoji:"🍯",desc:"Food for ants and ladybugs.",price:3, cat:"food",qty:3},
+    {id:"buy_leaves",name:"Leaves",      emoji:"🥬",desc:"Food for snails and caterpillars.",     price:2, cat:"food",qty:5},
+    {id:"buy_meat",  name:"Meat",        emoji:"🥩",desc:"Protein food for spiders.",       price:4, cat:"food",qty:3},
+    {id:"buy_shelf1",name:"Shelf +1 слот",emoji:"🪵",desc:"Space for one more jar.",     price:15,cat:"shelf",slotPrice:15,slotNum:1},
+    {id:"buy_shelf2",name:"Shelf +1 слот",emoji:"🪵",desc:"Space for one more jar.",     price:25,cat:"shelf",slotPrice:25,slotNum:2},
+    {id:"buy_shelf3",name:"Shelf +1 слот",emoji:"🪵",desc:"Space for one more jar.",     price:50,cat:"shelf",slotPrice:50,slotNum:3},
+    {id:"buy_pack",  name:"Backpack",      emoji:"🎒",desc:"Unlocks access to the forest.",        price:20,cat:"tool",unique:true},
+    {id:"buy_loupe", name:"Magnifier",        emoji:"🔍",desc:"+5% XP bonus.",                   price:15,cat:"tool",unique:true,xpBonus:0.05},
+    {id:"buy_book",  name:"Field Guide",emoji:"📗",desc:"+5% XP bonus.",                   price:30,cat:"tool",unique:true,xpBonus:0.05},
+    {id:"buy_scope", name:"Microscope",   emoji:"🔬",desc:"+5% XP bonus.",                   price:60,cat:"tool",unique:true,xpBonus:0.05},
+  ],
+};
+
+/* ════ HELPERS ═════════════════════════════════════════════════════ */
+function jarDef(id)  { return DATA.jars.find(function(j){return j.id===id;}); }
+function anyJar(iid) { return S.shelf.find(function(j){return j.iid===iid;}) || S.storage.find(function(j){return j.iid===iid;}); }
+function handItem()  { return S.handJarIid ? anyJar(S.handJarIid) : null; }
+function locDef(id)  { return DATA.locations.find(function(l){return l.id===id;}); }
+function subDef(id)  { return DATA.substrates.find(function(s){return s.id===id;}); }
+function creDef(id)  { return DATA.creatures.find(function(c){return c.id===id;}); }
+function decoDef(id) { return DATA.decorations.find(function(d){return d.id===id;}); }
+function plantDef(id){ return DATA.plants.find(function(p){return p.id===id;}); }
+function hasInv(id)  { return S.inventory.some(function(i){return i.id===id;}); }
+function invItem(id) { return S.inventory.find(function(i){return i.id===id;}); }
+
+/* ── Level & XP ──
+   100 XP per level. Hourly tick = sum of creature values on shelf * 0.1 XP.
+   Creature appears in location pool only if level >= level_req.
+   Effective creature chance scales with level: base * (1 + level*0.08), capped at 0.92.
+*/
+function calcLevel(xp)       { return Math.max(1, Math.floor(xp/100)+1); }
+function jarXph(item){ var pts=0; item.cells.forEach(function(c){if(c.creature){var cd=creDef(c.creature);if(cd)pts+=cd.value;}}); return pts*0.2; }
+function xpPct(xp)           { return (xp % 100); }          // 0-99 → bar %
+function effectiveChance(base){ return Math.min(0.92, base*(1+S.level*0.08)); }
+
+// jars on shelf start with 50% humidity
+function makeJar(jarId, name, iid){
+  return {iid:iid||('j'+Date.now()), jarId:jarId, name:name, cells:makeCells(jarId), substrate:[], humidity:50};
+}
+function makeCells(jid) {
+  var d=jarDef(jid), out=[];
+  for(var i=0;i<d.cols*d.rows;i++) out.push({creature:null, deco:null, plant:null, health:100, hunger:100, thirst:100});
+  return out;
+}
+function freeSlots(item)    { return item.cells.filter(function(c){return !c.creature&&!c.deco&&!c.plant;}).length; }
+function filledCells(item)  { return item.cells.filter(function(c){return c.creature||c.deco||c.plant;}).length; }
+function substrateMax(item) { return jarDef(item.jarId).maxSubstrate; }
+function allCellsEmpty(item){ return item.cells.every(function(c){return !c.creature&&!c.deco&&!c.plant;}); }
+
+function timeStr(m){ var h=Math.floor((m%1440)/60),mm=m%60; return (h<10?'0':'')+h+':'+(mm<10?'0':'')+mm; }
+function isNight() { var h=Math.floor((S.time%1440)/60); return h>=20||h<7; }
+function isLate()  { var h=Math.floor((S.time%1440)/60); return h>=22; }
+function checkLate(){ if(isLate()){toast('🌙 Too late — time to sleep!');return true;} return false; }
+function weightedPick(arr)  { return arr[Math.floor(Math.random()*arr.length)]; }
+function weightedPickByLevel(arr){
+  // creatures with level_req > current level have lower weight
+  var weights=arr.map(function(c){
+    var req=c.level_req||1;
+    return req<=S.level ? 3 : 1; // rare creatures spawn 3× less until level reached
+  });
+  var total=weights.reduce(function(s,w){return s+w;},0);
+  var r=Math.random()*total, cum=0;
+  for(var i=0;i<arr.length;i++){ cum+=weights[i]; if(r<cum) return arr[i]; }
+  return arr[arr.length-1];
+}
+function toast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove('show');},2200);
+}
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function openResetConfirm(){ openModal('modalSettings'); }
+function cancelReset(){ closeModal('modalSettings'); }
+function showResetConfirm(){
+  var area=document.getElementById('settingsResetArea'); if(!area) return;
+  area.innerHTML=
+    '<div style="background:rgba(200,96,96,.08);border:1px solid rgba(200,96,96,.3);border-radius:10px;padding:12px;text-align:center;">'+
+      '<div style="font-size:12px;color:var(--red);margin-bottom:10px;font-weight:700;">All progress will be deleted</div>'+
+      '<div style="display:flex;gap:8px;">'+
+        '<button onclick="cancelReset()" style="flex:1;padding:9px;background:var(--surface);border:1px solid var(--border2);color:var(--text-dim);font-family:var(--font);font-size:12px;font-weight:700;border-radius:8px;cursor:pointer;">Cancel</button>'+
+        '<button onclick="doResetConfirmed()" style="flex:1;padding:9px;background:rgba(200,96,96,.15);border:1px solid rgba(200,96,96,.4);color:var(--red);font-family:var(--font);font-size:12px;font-weight:700;border-radius:8px;cursor:pointer;">🗑 Yes, delete</button>'+
+      '</div>'+
+    '</div>';
+}
+function openSettingsModal(){
+  // update info before opening
+  var m=document.getElementById('modalSettings'); if(!m) return;
+  var rows=m.querySelectorAll('.modal div');
+  m.querySelector('.modal > div:nth-child(3) > div:first-child').innerHTML=
+    '<div style="font-size:13px;font-weight:700;color:var(--text-bright);margin-bottom:2px;">'+
+      'Day '+S.day+' · '+timeStr(S.time)+'</div>'+
+    '<div style="font-size:11px;color:var(--text-dim);">Shelf: '+S.shelfSlots+' slots · Lv. '+S.level+'</div>';
+  // reset confirmation area
+  var area=document.getElementById('settingsResetArea');
+  if(area) area.innerHTML='<button onclick="showResetConfirm()" style="width:100%;padding:11px;background:rgba(255,255,255,.03);border:1px solid var(--border2);color:var(--text-dim);font-family:var(--font);font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;">🗑 Reset progress</button>';
+  openModal('modalSettings');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+/* ════ STATE ═══════════════════════════════════════════════════════ */
+var SAVE_KEY = 'terrarium_save_v1';
+
+var S_DEFAULT = {
+  shelf:[], storage:[], inventory:[],
+  openJarIid:null, handJarIid:null,
+  moveMode:false, moveSrcIid:null, moveSrcIdx:null,
+  inLocation:false, chosenLocId:'wasteland', locCells:[], searching:false,
+  day:1, time:8*60, coins:25, pendingIncome:0,
+  xp:0, level:1,
+  shelfSlots:2,
+  deals:null,
+  cpop:null, subpop:null,
+};
+
+function newGame(){
+  var s = JSON.parse(JSON.stringify(S_DEFAULT));
+  s.shelf.push({iid:'s1',jarId:'jar_small', name:'Jar #1',cells:makeCells('jar_small'), substrate:[],humidity:50});
+  s.shelf.push({iid:'s2',jarId:'jar_medium',name:'Jar #2',cells:makeCells('jar_medium'),substrate:[],humidity:50});
+  s.inventory.push({id:'buy_leaves',name:'Leaves', emoji:'🥬',desc:'Food for snails and caterpillars.',qty:2});
+  s.inventory.push({id:'buy_syrup', name:'Syrup',  emoji:'🍯',desc:'Food for ants and ladybugs.',qty:2});
+  s.inventory.push({id:'buy_meat',  name:'Meat',   emoji:'🥩',desc:'Protein food for spiders.',qty:2});
+  return s;
+}
+
+function saveGame(){
+  try {
+    var saveData = {
+      shelf:S.shelf, storage:S.storage, inventory:S.inventory,
+      day:S.day, time:S.time, coins:S.coins, pendingIncome:S.pendingIncome,
+      xp:S.xp, level:S.level,
+      shelfSlots:S.shelfSlots,
+      deals:S.deals,
+      chosenLocId:S.chosenLocId,
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+  } catch(e){ console.warn('Save failed', e); }
+}
+
+function loadGame(){
+  try {
+    var raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return newGame();
+    var saved = JSON.parse(raw);
+    var s = JSON.parse(JSON.stringify(S_DEFAULT));
+    s.shelf        = saved.shelf        || [];
+    s.storage      = saved.storage      || [];
+    s.inventory    = saved.inventory    || [];
+    s.day          = saved.day          || 1;
+    s.time         = saved.time         || 8*60;
+    s.coins        = saved.coins        || 0;
+    s.pendingIncome= saved.pendingIncome|| 0;
+    s.xp           = saved.xp          || 0;
+    s.level        = saved.level        || 1;
+    s.chosenLocId  = saved.chosenLocId  || 'wasteland';
+    s.shelfSlots   = saved.shelfSlots   || 2;
+    s.deals        = saved.deals        || null;
+    return s;
+  } catch(e){ console.warn('Load failed', e); return newGame(); }
+}
+
+function resetGame(){
+  // confirm broken on iOS local file — use modal
+  openResetConfirm();
+}
+
+function doResetConfirmed(){
+  localStorage.removeItem(SAVE_KEY);
+  location.reload();
+}
+
+var S = loadGame();
+
+/* ════ TIME & ECONOMY ══════════════════════════════════════════════ */
+function advanceTime(mins){
+  var prevHour=Math.floor(S.time/60);
+  var pd=S.day;
+  S.time+=mins;
+  S.day=1+Math.floor(S.time/1440);
+  // hourly XP ticks
+  var newHour=Math.floor(S.time/60);
+  if(newHour>prevHour) tickXp(newHour-prevHour);
+  if(S.day>pd) onNewDay();
+  saveGame(); renderHeader(); updateNightMode();
+}
+
+// XP per hour = 0.1 per creature-value-point on shelf (so ~10h per creature for 1 XP at value:1)
+function tickXp(hours){
+  var pts=0;
+  S.shelf.forEach(function(jar){
+    jar.cells.forEach(function(c){
+      if(c.creature){ var cd=creDef(c.creature); if(cd) pts+=cd.value; }
+    });
+  });
+  if(pts){
+    var xpMult=1+(hasInv("buy_loupe")?0.05:0)+(hasInv("buy_book")?0.05:0)+(hasInv("buy_scope")?0.05:0);
+    var gained=pts*hours*0.2*xpMult;
+    var prevLvl=S.level;
+    S.xp=Math.round((S.xp+gained)*10)/10;
+    S.level=calcLevel(Math.floor(S.xp));
+    if(S.level>prevLvl) toast('⬆️ Level '+S.level+'!');
+  }
+  // humidity decay: ~4% per hour → empty in ~25h
+  // plant health: ±2-3 hp/h depending on humidity match
+  S.shelf.forEach(function(jar){
+    if(jar.humidity==null) jar.humidity=50;
+    jar.humidity=Math.max(0, jar.humidity - 2*hours);
+    jar.cells.forEach(function(c){
+      if(!c.creature) return;
+      // hunger: -2/hr, at 0 loses health, at 0 hp — disappears
+      c.hunger=Math.max(0,(c.hunger!=null?c.hunger:100)-2*hours);
+      if(c.hunger===0){
+        c.health=Math.max(0,(c.health!=null?c.health:100)-3*hours);
+        if(c.health===0){ c.creature=null; c.hunger=null; c.health=null; }
+      }
+    });
+    jar.cells.forEach(function(c){
+      if(!c.plant) return;
+      if(c.plant==='dead_plant') return;
+      var pd=plantDef(c.plant); if(!pd) return;
+      var range=pd.humidity||'50-70%';
+      var m=range.match(/(\d+)-(\d+)/);
+      if(!m) return;
+      var lo=parseInt(m[1]), hi=parseInt(m[2]);
+      var h=jar.humidity;
+      if(h>=lo && h<=hi){
+        c.health=Math.min(100, (c.health||100) + 2*hours);
+      } else {
+        var dev=h<lo?(lo-h):(h-hi);
+        var loss=Math.min(6, 1 + dev/10) * hours;
+        var newHp=Math.max(0,(c.health||100)-loss);
+        if(newHp<=0){ c.plant='dead_plant'; c.health=100; } else { c.health=newHp; }
+      }
+    });
+  });
+}
+
+function onNewDay(){
+  toast('🌅 Day '+S.day);
+  genDeals();
+  saveGame();
+}
+
+/* ════ DEALS ════════════════════════════════════════════════════════ */
+function genDeals(){
+  var allCre=DATA.creatures;
+  var allPl=DATA.plants;
+  var pool=allCre.map(function(c){return {type:'creature',id:c.id,emoji:c.emoji,name:c.name,value:c.value};})
+    .concat(allPl.map(function(p){return {type:'plant',id:p.id,emoji:p.emoji,name:p.name,value:1};}));
+  var shuffled=pool.slice().sort(function(){return Math.random()-.5;});
+  var offers=shuffled.slice(0,3).map(function(o){
+    return {type:o.type,id:o.id,emoji:o.emoji,name:o.name,
+            price:Math.max(2,(o.value||1)*2+Math.floor(Math.random()*3)),done:false};
+  });
+  // задание на банку — генерим только если no active one
+  var quest=S.deals&&S.deals.quest&&!S.deals.quest.done ? S.deals.quest : genQuest();
+  S.deals={day:S.day, offerIdx:0, offers:offers, quest:quest};
+}
+
+function genQuest(){
+  var allCre=DATA.creatures;
+  var allPl=DATA.plants;
+  var sc=allCre.slice().sort(function(){return Math.random()-.5;}).slice(0,2);
+  var sp=allPl.slice().sort(function(){return Math.random()-.5;}).slice(0,2);
+  var reward=sc.reduce(function(s,c){return s+(c.value||1)*3;},0)+sp.length*4+20+Math.floor(Math.random()*20);
+  return {
+    cres:sc.map(function(c){return {id:c.id,emoji:c.emoji,name:c.name};}),
+    pls: sp.map(function(p){return {id:p.id,emoji:p.emoji,name:p.name};}),
+    reward:reward, done:false
+  };
+}
+
+function renderDeals(){
+  var el=document.getElementById('page-deals'); if(!el) return;
+  if(!S.deals || S.deals.day!==S.day) genDeals();
+  var d=S.deals;
+  var allJars=S.shelf.concat(S.storage);
+
+  // ── Offer queue: show current + completed ──
+  var idx=d.offerIdx||0;
+  var doneHtml=d.offers.slice(0,idx).map(function(o){
+    return '<div style="background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px;opacity:.4;">'+
+      '<div style="font-size:20px">'+o.emoji+'</div>'+
+      '<div style="flex:1;font-size:12px;color:var(--text-dim)">'+o.name+'</div>'+
+      '<div style="font-size:11px;color:var(--text-dim)">✅ +'+o.price+' 🪙</div>'+
+    '</div>';
+  }).join('');
+
+  var offerHtml='';
+  if(idx>=d.offers.length){
+    offerHtml='<div style="text-align:center;padding:16px 0;color:var(--text-dim);font-family:var(--font-hand);font-size:16px;">All daily deals closed ✅</div>';
+  } else {
+    var offer=d.offers[idx];
+    var srcOptions=[];
+    allJars.forEach(function(jar){
+      jar.cells.forEach(function(c,ci){
+        var match=(offer.type==='creature'&&c.creature===offer.id)||(offer.type==='plant'&&c.plant===offer.id);
+        if(match) srcOptions.push({jar:jar,ci:ci});
+      });
+    });
+    var optHtml=srcOptions.length
+      ? srcOptions.map(function(o){
+          var onShelf=S.shelf.some(function(j){return j.iid===o.jar.iid;});
+          return '<div class="jpi" onclick="sellOffer(\''+o.jar.iid+'\','+o.ci+')">'+
+            '<div style="font-size:20px">'+jarDef(o.jar.jarId).emoji+'</div>'+
+            '<div class="jpi-info"><div class="jpi-name">'+o.jar.name+'</div>'+
+              '<div class="jpi-meta">'+(onShelf?'shelf':'storage')+'</div></div>'+
+            '<div style="color:var(--accent);font-weight:800;font-size:13px;flex-shrink:0">+'+offer.price+' 🪙</div>'+
+          '</div>';
+        }).join('')
+      : '<div style="font-size:11px;color:var(--text-dim);padding:4px 0;">Not available</div>';
+    offerHtml=
+      '<div style="background:var(--panel);border:1px solid var(--border2);border-radius:12px;padding:12px;margin-bottom:8px;">'+
+        '<div style="font-size:9px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">'+(idx+1)+' of '+d.offers.length+'</div>'+
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'+
+          '<div style="font-size:30px">'+offer.emoji+'</div>'+
+          '<div style="flex:1;">'+
+            '<div style="font-size:14px;font-weight:800;color:var(--text-bright);">'+offer.name+'</div>'+
+            '<div style="font-size:11px;color:var(--accent);">🪙 '+offer.price+' моnone</div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="jpi-list">'+optHtml+'</div>'+
+      '</div>';
+  }
+
+  // ── Jar quest ──
+  var q=d.quest;
+  var questHtml='';
+  if(q.done){
+    questHtml='<div style="background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:12px;opacity:.4;text-align:center;font-family:var(--font-hand);font-size:15px;color:var(--text-dim);">✅ Order fulfilled</div>';
+  } else {
+    var questJars=allJars.filter(function(jar){
+      return q.cres.every(function(r){return jar.cells.some(function(c){return c.creature===r.id;});})
+          && q.pls.every(function(r){return jar.cells.some(function(c){return c.plant===r.id;});});
+    });
+    var qOpt=questJars.length
+      ? questJars.map(function(jar){
+          var onShelf=S.shelf.some(function(j){return j.iid===jar.iid;});
+          return '<div class="jpi" onclick="fulfillQuest(\''+jar.iid+'\')">'+ 
+            '<div style="font-size:20px">'+jarDef(jar.jarId).emoji+'</div>'+
+            '<div class="jpi-info"><div class="jpi-name">'+jar.name+'</div>'+
+              '<div class="jpi-meta">'+(onShelf?'shelf':'storage')+'</div></div>'+
+            '<div style="color:var(--accent);font-weight:800;font-size:13px;flex-shrink:0">+'+q.reward+' 🪙</div>'+
+          '</div>';
+        }).join('')
+      : '<div style="font-size:11px;color:var(--text-dim);padding:4px 0;">No matching jar</div>';
+    questHtml=
+      '<div style="background:var(--panel);border:1px solid var(--border2);border-radius:12px;padding:12px;">'+
+        '<div style="font-size:9px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Order · stays until fulfilled</div>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">'+
+        q.cres.map(function(c){
+          return '<div style="background:rgba(143,190,58,.08);border:1px solid rgba(143,190,58,.2);border-radius:9px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;">'+
+            '<div style="font-size:22px;">'+c.emoji+'</div>'+
+            '<div style="font-size:11px;font-weight:700;color:var(--accent);text-align:center;">'+c.name+'</div></div>';
+        }).join('')+
+        q.pls.map(function(p){
+          return '<div style="background:rgba(106,176,208,.08);border:1px solid rgba(106,176,208,.2);border-radius:9px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;">'+
+            '<div style="font-size:22px;">'+p.emoji+'</div>'+
+            '<div style="font-size:11px;font-weight:700;color:var(--accent3);text-align:center;">'+p.name+'</div></div>';
+        }).join('')+
+        '</div>'+
+        '<div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">The jar will be taken entirely.</div>'+
+        '<div style="color:var(--accent);font-weight:800;font-size:14px;margin-bottom:8px;">🪙 '+q.reward+' моnone</div>'+
+        '<div class="jpi-list">'+qOpt+'</div>'+
+      '</div>';
+  }
+
+  el.innerHTML=
+    '<div style="padding:14px 14px 100px;">'+
+      '<div style="font-family:var(--font-hand);font-size:22px;color:var(--accent2);margin-bottom:4px;">🤝 Deals</div>'+
+      '<div style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">Offers refresh daily</div>'+
+      doneHtml+offerHtml+
+      '<div style="height:1px;background:var(--border);margin:12px 0;"></div>'+
+      questHtml+
+    '</div>';
+}
+
+function sellOffer(jarIid,cellIdx){
+  if(!S.deals) return;
+  var idx=S.deals.offerIdx||0;
+  var offer=S.deals.offers[idx]; if(!offer||offer.done) return;
+  var jar=anyJar(jarIid); if(!jar) return;
+  jar.cells[cellIdx]={creature:null,deco:null,plant:null,health:null,hunger:null,thirst:null};
+  S.coins+=offer.price;
+  offer.done=true;
+  S.deals.offerIdx=idx+1;
+  toast(offer.emoji+' sold for '+offer.price+' 🪙');
+  renderHeader(); saveGame(); renderDeals(); renderShelf();
+}
+
+function skipOffer(){
+  if(!S.deals) return;
+  S.deals.offerIdx=(S.deals.offerIdx||0)+1;
+  renderDeals();
+}
+
+function fulfillQuest(jarIid){
+  if(!S.deals||!S.deals.quest||S.deals.quest.done) return;
+  var jar=anyJar(jarIid); if(!jar) return;
+  S.shelf=S.shelf.filter(function(j){return j.iid!==jarIid;});
+  S.storage=S.storage.filter(function(j){return j.iid!==jarIid;});
+  if(S.openJarIid===jarIid) S.openJarIid=null;
+  S.coins+=S.deals.quest.reward;
+  S.deals.quest.done=true;
+  toast('🤝 Order fulfilled! +'+S.deals.quest.reward+' 🪙');
+  renderHeader(); saveGame(); renderDeals(); renderHome();
+}
+
+
+
+function doSleep(){
+  if(isLate()){
+    var nowInDay=S.time%1440;
+    var jump=nowInDay<=8*60?(8*60-nowInDay):(1440-nowInDay+8*60);
+    advanceTime(jump||1440); toast('🌅 Good morning!');
+  } else { advanceTime(30); toast('⏩ +30 minutes'); }
+  renderHome();
+}
+
+function collectIncome(){
+  if(!S.pendingIncome) return;
+  S.coins+=S.pendingIncome; toast('+'+S.pendingIncome+' 🪙 collected!');
+  S.pendingIncome=0; renderHeader(); updateIncomeTicker();
+}
+
+function updateNightMode(){
+  var n=isNight();
+  document.querySelector('.header').classList.toggle('night',n);
+  document.getElementById('page-home').classList.toggle('night-bg',n);
+}
+
+function updateIncomeTicker(){
+  var el=document.getElementById('incomeTicker'); if(!el) return;
+  el.style.display=S.pendingIncome?'flex':'none';
+  el.querySelector('.it-amount').textContent='+'+S.pendingIncome+' 🪙';
+  el.querySelector('.it-btn').disabled=!S.pendingIncome;
+}
+
+function renderSleepBtn(){
+  var btn=document.getElementById('sleepBtn'); if(!btn) return;
+  var onHome=document.getElementById('page-home').classList.contains('active');
+  btn.classList.toggle('hide',!onHome);
+  btn.textContent=isLate()?'🌙 Sleep':'⏩ Wait';
+}
+
+function renderHeader(){
+  document.getElementById('hTime').textContent=timeStr(S.time);
+  document.getElementById('hCoins').textContent=S.coins;
+  document.getElementById('hDay').textContent='Day '+S.day;
+  document.getElementById('hLevel').textContent=S.level;
+  document.getElementById('hXpBar').style.width=xpPct(Math.floor(S.xp))+'%';
+  renderSleepBtn();
+}
+
+/* ════ ROUTING ══════════════════════════════════════════════════════ */
+function goPage(p){
+  document.querySelectorAll('.page').forEach(function(e){e.classList.remove('active');});
+  document.querySelectorAll('.nav-btn').forEach(function(e){e.classList.remove('active');});
+  document.getElementById('page-'+p).classList.add('active');
+  document.getElementById('nav-'+p).classList.add('active');
+  if(p!=='location') resetTravel();
+  if(p==='home')     renderHome();
+  if(p==='location') renderLocContent();
+  if(p==='shop')     renderShop();
+  if(p==='insect')   renderInsect();
+  if(p==='deals')    renderDeals();
+  renderSleepBtn();
+}
+function resetTravel(){
+  if(S.inLocation){ S.inLocation=false; S.locCells=[]; S.searching=false;
+    document.getElementById('page-location').style.background='var(--bg)'; }
+}
+
+/* ════ HOME ═════════════════════════════════════════════════════════ */
+function renderHome(){
+  renderShelf(); updateIncomeTicker(); renderOpenJar();
+  renderStorageSection(); renderInventory(); updateNightMode();
+}
+
+function renderShelf(){
+  var el=document.getElementById('shelfEl'); el.innerHTML='';
+  var SHELF_SLOTS=S.shelfSlots||2;
+  if(!S.shelf.length){ el.innerHTML='<div class="shelf-empty-msg">Buy a jar in the shop 🛒</div>'; }
+  S.shelf.forEach(function(item){
+    var def=jarDef(item.jarId);
+    var uw=def.cols<=2?26:16, gap=2;
+    var bW=def.cols*uw+(def.cols-1)*gap+6;
+    var bH=def.rows*22+(def.rows-1)*gap+6;
+    var lidW=Math.max(bW*.55,16);
+    var hasSub=item.substrate&&item.substrate.filter(Boolean).length>0;
+    var cellPxW=Math.floor((bW-4)/def.cols);
+    var cellPxH=Math.floor((bH-4)/def.rows);
+    var fSize=Math.max(8,Math.min(cellPxW,cellPxH)-2);
+    var emojiGrid=item.cells.map(function(c){
+      var d=c.creature?creDef(c.creature):(c.deco?decoDef(c.deco):(c.plant?plantDef(c.plant):null));
+      return '<span style="display:inline-flex;align-items:center;justify-content:center;'+
+             'width:'+cellPxW+'px;height:'+cellPxH+'px;font-size:'+fSize+'px;line-height:1">'+
+             (d?d.emoji:'')+'</span>';
+    }).join('');
+    var div=document.createElement('div');
+    div.className='shelf-jar'+(S.openJarIid===item.iid?' is-open':'');
+    div.onclick=(function(iid){return function(){toggleOpenJar(iid);};})(item.iid);
+    div.innerHTML=
+      '<div style="display:flex;flex-direction:column;align-items:center">'+
+        '<div class="sj-lid" style="width:'+lidW+'px;height:6px"></div>'+
+        '<div class="sj-body" style="width:'+bW+'px;height:'+bH+'px">'+
+          (hasSub?'<div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:rgba(180,140,60,.4);border-radius:0 0 3px 3px;"></div>':'')+
+          '<div style="position:absolute;inset:2px;display:grid;grid-template-columns:repeat('+def.cols+','+cellPxW+'px);">'+emojiGrid+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="sj-name">'+item.name+'</div>';
+    el.appendChild(div);
+  });
+  for(var i=S.shelf.length;i<SHELF_SLOTS;i++){
+    var slot=document.createElement('div');
+    slot.className='shelf-slot-empty';
+    slot.innerHTML='<div class="sse-body"></div><div class="sj-name" style="opacity:.3">—</div>';
+    el.appendChild(slot);
+  }
+}
+
+function toggleOpenJar(iid){
+  S.openJarIid=(S.openJarIid===iid)?null:iid;
+  cancelMove(); renderShelf(); renderOpenJar();
+}
+
+/* ── substrate bars: width matches grid ── */
+function renderSubstrateBars(item){
+  var def=jarDef(item.jarId);
+  var px=def.cols<=2?76:62;
+  var gridW=def.cols*px+(def.cols-1)*5;
+  var max=def.maxSubstrate;
+  var allJars=S.shelf.concat(S.storage);
+  var html='<div style="width:'+gridW+'px;margin-top:8px">';
+  for(var i=0;i<max;i++){
+    var sid=item.substrate&&item.substrate[i]?item.substrate[i]:null;
+    var sd=sid?subDef(sid):null;
+    if(sd){
+      var canPour=allJars.some(function(j){
+        if(j.iid===item.iid) return false;
+        var m=jarDef(j.jarId).maxSubstrate;
+        var used=(j.substrate||[]).filter(Boolean).length;
+        return used<m;
+      });
+      html+='<div class="substrate-bar '+sd.css+'">'+
+        '<span class="sb-emoji">'+sd.emoji+'</span>'+
+        '<span class="sb-name">'+sd.name+'</span>'+
+        (canPour?'<button class="sb-remove" title="Pour" onclick="pourSubstrate(\''+item.iid+'\','+i+',event)">→🫙</button>':'')+
+        '<button class="sb-remove" onclick="removeSubstrate(\''+item.iid+'\','+i+',event)">✕</button>'+
+      '</div>';
+    } else {
+      html+='<div class="substrate-bar sub-empty">'+
+        '<span class="sb-hint">Substrate — find at a location</span>'+
+      '</div>';
+    }
+  }
+  html+='</div>';
+  return html;
+}
+
+function pourSubstrate(jarIid,slotIdx,e){
+  if(e&&e.stopPropagation) e.stopPropagation();
+  var srcItem=anyJar(jarIid);
+  if(!allCellsEmpty(srcItem)){ toast('Pour можно только from an empty jar 🫙'); return; }
+  var subId=srcItem.substrate&&srcItem.substrate[slotIdx];
+  if(!subId) return;
+  var allJars=S.shelf.concat(S.storage);
+  var targets=allJars.filter(function(j){
+    if(j.iid===jarIid) return false;
+    var m=jarDef(j.jarId).maxSubstrate;
+    var used=(j.substrate||[]).filter(Boolean).length;
+    if(used>=m) return false;
+    return j.cells.every(function(c){return !c.creature&&!c.deco;});
+  });
+  if(!targets.length){ toast('No suitable empty jars'); return; }
+  var sd=subDef(subId);
+  S.subpop={srcJarIid:jarIid, slotIdx:slotIdx};
+  var list=targets.map(function(t){
+    var def=jarDef(t.jarId);
+    var onShelf=S.shelf.some(function(j){return j.iid===t.iid;});
+    return '<div class="jpi" onclick="confirmPour(\''+t.iid+'\')">'+
+      '<div style="font-size:26px">'+def.emoji+'</div>'+
+      '<div class="jpi-info"><div class="jpi-name">'+t.name+'</div>'+
+        '<div class="jpi-meta">'+def.name+' · '+(onShelf?'shelf':'storage')+'</div></div>'+
+    '</div>';
+  }).join('');
+  document.getElementById('subpopContent').innerHTML=
+    '<div style="font-family:var(--font-hand);font-size:18px;color:var(--accent2);margin-bottom:8px">Pour '+sd.emoji+' '+sd.name+' в...</div>'+
+    '<div class="jpi-list">'+list+'</div>';
+  document.getElementById('subpopOv').classList.add('open');
+}
+
+function confirmPour(dstIid){
+  if(!S.subpop) return;
+  var src=anyJar(S.subpop.srcJarIid), dst=anyJar(dstIid);
+  var slotIdx=S.subpop.slotIdx;
+  var subId=src.substrate[slotIdx];
+  if(!dst.substrate) dst.substrate=[];
+  var dstMax=jarDef(dst.jarId).maxSubstrate, dstSlot=-1;
+  for(var i=0;i<dstMax;i++){ if(!dst.substrate[i]){dstSlot=i;break;} }
+  if(dstSlot===-1){ toast('No space'); closeSubpop(); return; }
+  dst.substrate[dstSlot]=subId;
+  src.substrate[slotIdx]=null;
+  closeSubpop(); advanceTime(5);
+  toast(subDef(subId).emoji+' '+subDef(subId).name+' → '+dst.name);
+  renderShelf(); renderOpenJar();
+}
+
+function closeSubpop(){ document.getElementById('subpopOv').classList.remove('open'); S.subpop=null; }
+
+function removeSubstrate(jarIid,slotIdx,e){
+  if(e&&e.stopPropagation) e.stopPropagation();
+  var item=anyJar(jarIid);
+  if(!allCellsEmpty(item)){ toast('Free all cells first'); return; }
+  var sd=subDef(item.substrate[slotIdx]);
+  item.substrate[slotIdx]=null;
+  advanceTime(5);
+  toast((sd?sd.emoji+' '+sd.name:'Субстрат')+' — removed');
+  renderShelf(); renderOpenJar();
+}
+
+function renderOpenJar(){
+  var area=document.getElementById('openJarArea');
+  if(!S.openJarIid){ area.innerHTML=''; return; }
+  var item=anyJar(S.openJarIid); if(!item){ area.innerHTML=''; return; }
+  var def=jarDef(item.jarId);
+  var px=def.cols<=2?76:62;
+  var banner=S.moveMode?'<div class="move-banner">↔️ Tap destination cell · tap source again to cancel</div>':'';
+  area.innerHTML=
+    '<div class="open-jar-view">'+
+      '<div class="ojv-header">'+
+        '<div style="flex:1;min-width:0;">'+
+          '<div class="ojv-title" onclick="openRename(\''+item.iid+'\')">'+
+            '<span class="ojv-title-text">'+item.name+'</span>'+
+            '<span class="ojv-edit" style="font-size:13px;opacity:.3;margin-left:4px;">✏️</span>'+
+          '</div>'+
+          '<div style="display:flex;align-items:center;gap:5px;margin-top:3px;flex-wrap:wrap;">'+
+            '<span class="ojv-title-meta">'+filledCells(item)+'/'+item.cells.length+'</span>'+
+            (jarXph(item)>0?'<span style="font-size:10px;color:var(--accent);background:rgba(143,190,58,.12);padding:1px 6px;border-radius:5px;">+'+jarXph(item).toFixed(1)+' xp/ч</span>':'')+
+            '<span style="font-size:10px;color:var(--accent3);background:rgba(106,176,208,.1);padding:1px 6px;border-radius:5px;">💧'+(item.humidity!=null?Math.round(item.humidity):50)+'%</span>'+
+          '</div>'+
+        '</div>'+
+        '<div class="ojv-acts">'+
+          '<button class="ojv-btn" onclick="doWater()">💧</button>'+
+          '<button class="ojv-btn" onclick="doFeed()">🥬</button>'+
+          '<button class="ojv-storage-btn" onclick="moveToStorage(\''+item.iid+'\')">📦 To storage</button>'+
+        '</div>'+
+        '<button class="ojv-close" onclick="toggleOpenJar(\''+item.iid+'\')">✕</button>'+
+      '</div>'+
+      banner+
+      '<div class="ojv-hint">'+(S.moveMode?'':'Tap a cell to interact')+'</div>'+
+      '<div style="display:grid;grid-template-columns:repeat('+def.cols+','+px+'px);gap:5px;margin:0 auto;" id="ojg_'+item.iid+'"></div>'+
+      renderSubstrateBars(item)+
+    '</div>';
+  var grid=document.getElementById('ojg_'+item.iid);
+  item.cells.forEach(function(cell,i){
+    var isSrc=S.moveMode&&S.moveSrcIid===item.iid&&S.moveSrcIdx===i;
+    var isDst=S.moveMode&&S.moveSrcIid===item.iid&&i!==S.moveSrcIdx;
+    var el=buildCell(cell,px,(function(iid,idx){return function(){onJarCellClick(iid,idx);};})(item.iid,i));
+    if(isSrc) el.classList.add('move-src');
+    if(isDst) el.classList.add('move-dst');
+    grid.appendChild(el);
+  });
+}
+
+function onJarCellClick(iid,idx){
+  if(S.moveMode){
+    if(S.moveSrcIid===iid&&S.moveSrcIdx===idx){ cancelMove(); renderOpenJar(); return; }
+    if(S.moveSrcIid===iid){
+      var jar=anyJar(iid);
+      var a=jar.cells[S.moveSrcIdx], b=jar.cells[idx];
+      jar.cells[S.moveSrcIdx]={creature:b.creature||null,deco:b.deco||null,plant:b.plant||null,health:b.health||null,hunger:b.hunger||null,thirst:b.thirst||null};
+      jar.cells[idx]={creature:a.creature||null,deco:a.deco||null,plant:a.plant||null,health:a.health||null,hunger:a.hunger||null,thirst:a.thirst||null};
+      toast('Moved'); cancelMove(); renderShelf(); renderOpenJar(); updateIncomeTicker(); return;
+    }
+    cancelMove(); return;
+  }
+  S.cpop={jarIid:iid, cellIdx:idx};
+  renderCpop();
+  document.getElementById('cpopOv').classList.add('open');
+}
+
+function cancelMove(){ S.moveMode=false; S.moveSrcIid=null; S.moveSrcIdx=null; }
+function doWater(){
+  if(checkLate()) return;
+  if(S.openJarIid){
+    var jar=anyJar(S.openJarIid);
+    if(jar){
+      if(jar.humidity==null) jar.humidity=0;
+      jar.humidity=Math.min(100, jar.humidity+20);
+      renderOpenJar();
+    }
+  }
+  advanceTime(10);
+  toast('💧 Watered!');
+}
+function doFeed(){  if(checkLate()) return; openFeedModal(); }
+
+function moveToStorage(iid){
+  var item=S.shelf.find(function(j){return j.iid===iid;}); if(!item) return;
+  S.shelf=S.shelf.filter(function(j){return j.iid!==iid;});
+  S.storage.push(item);
+  if(S.openJarIid===iid) S.openJarIid=null;
+  if(S.handJarIid===iid) S.handJarIid=null;
+  cancelMove(); renderHome(); toast(item.name+' → на storage 📦');
+}
+
+function openRename(iid){
+  var item=anyJar(iid); if(!item) return;
+  var inp=document.getElementById('renameInput');
+  inp.value=item.name;
+  document.getElementById('renameOk').onclick=function(){
+    var v=inp.value.trim();
+    if(v){ item.name=v; renderShelf(); renderOpenJar(); renderStorageSection(); }
+    closeModal('modalRename');
+  };
+  openModal('modalRename');
+  setTimeout(function(){inp.focus();},300);
+}
+
+function renderStorageSection(){
+  var el=document.getElementById('storageShelf'); el.innerHTML='';
+  if(!S.storage.length){ el.innerHTML='<div class="empty-msg">Storage is empty</div>'; return; }
+  S.storage.forEach(function(item){
+    var def=jarDef(item.jarId);
+    var subIcons=(item.substrate||[]).filter(Boolean).map(function(sid){var sd=subDef(sid);return sd?sd.emoji:'';}).join('');
+    var seen={}, emojis=[];
+    item.cells.forEach(function(c){
+      var id=c.creature||c.deco; if(!id||seen[id]) return; seen[id]=1;
+      var d=c.creature?creDef(c.creature):decoDef(c.deco); if(d) emojis.push(d.emoji);
+    });
+    var previewStr=emojis.slice(0,6).join(' ');
+    var row=document.createElement('div'); row.className='storage-row';
+    row.innerHTML=
+      '<div class="sr-icon">'+def.emoji+'</div>'+
+      '<div class="sr-info">'+
+        '<div class="sr-name">'+item.name+'</div>'+
+        '<div class="sr-meta">'+(subIcons?subIcons+' ':'')+filledCells(item)+'/'+item.cells.length+'</div>'+
+      '</div>'+
+      (previewStr?'<div style="font-size:13px;letter-spacing:1px;opacity:.7;flex-shrink:0;max-width:80px;text-align:right">'+previewStr+'</div>':'')+
+      '<button class="sr-btn" onclick="storageToShelf(\''+item.iid+'\')">To shelf</button>';
+    el.appendChild(row);
+  });
+}
+
+function storageToShelf(iid){
+  var item=S.storage.find(function(j){return j.iid===iid;}); if(!item) return;
+  if(S.shelf.length>=(S.shelfSlots||2)){ toast('Shelf is full — buy a slot 🪵'); return; }
+  S.storage=S.storage.filter(function(j){return j.iid!==iid;});
+  S.shelf.push(item); renderHome(); toast(item.name+' → to shelf');
+}
+
+function renderInventory(){
+  var el=document.getElementById('inventoryList'); el.innerHTML='';
+  if(!S.inventory.length){ el.innerHTML='<div class="empty-msg" style="padding:0 2px">Empty</div>'; return; }
+  S.inventory.forEach(function(item){
+    var row=document.createElement('div'); row.className='inv-row';
+    row.innerHTML=
+      '<div class="inv-emoji">'+item.emoji+'</div>'+
+      '<div class="inv-info"><div class="inv-name">'+item.name+'</div><div class="inv-desc">'+item.desc+'</div></div>'+
+      (item.qty>1?'<div class="inv-qty">×'+item.qty+'</div>':'');
+    el.appendChild(row);
+  });
+}
+
+/* ════ CELL ═════════════════════════════════════════════════════════ */
+function buildCell(cell,px,onClick){
+  var el=document.createElement('div');
+  el.className='cell'; el.style.width=px+'px'; el.style.height=px+'px';
+  var content=cell.creature||cell.deco||(cell.plant?cell.plant:null);
+  if(content){
+    var def=cell.creature?creDef(cell.creature):(cell.plant?(cell.plant==='dead_plant'?{emoji:'🥀'}:plantDef(cell.plant)):decoDef(cell.deco));
+    el.innerHTML='<div class="cell-cre" style="font-size:'+Math.round(px*.38)+'px">'+(def?def.emoji:'?')+'</div>';
+  }
+  if(cell.creature){
+    var hp=cell.health!=null?cell.health:100;
+    var hu=cell.hunger!=null?cell.hunger:100;
+    var hpC=hp>60?'#6ab85a':hp>30?'#c8a040':'#c86060';
+    el.innerHTML+='<div style="position:absolute;bottom:4px;left:4px;right:4px;display:flex;flex-direction:column;gap:2px;">'+
+      '<div style="height:1.5px;background:rgba(0,0,0,.4);border-radius:1px;overflow:hidden">'+
+        '<div style="height:100%;width:'+hp+'%;background:'+hpC+';border-radius:1px;transition:width .4s"></div></div>'+
+      '<div style="height:1.5px;background:rgba(0,0,0,.4);border-radius:1px;overflow:hidden">'+
+        '<div style="height:100%;width:'+hu+'%;background:#5aaacc;border-radius:1px;transition:width .4s"></div></div>'+
+    '</div>';
+  }
+  if(cell.plant){
+    var php=cell.health!=null?cell.health:100;
+    var phpC=php>60?'#6ab85a':php>30?'#c8a040':'#c86060';
+    el.innerHTML+='<div style="position:absolute;bottom:4px;left:4px;right:4px;">'+
+      '<div style="height:1.5px;background:rgba(0,0,0,.4);border-radius:1px;overflow:hidden">'+
+        '<div style="height:100%;width:'+php+'%;background:'+phpC+';border-radius:1px;transition:width .4s"></div></div>'+
+    '</div>';
+  }
+  el.onclick=onClick; return el;
+}
+
+var FEED_TYPES=[
+  {id:"leaves",emoji:"🥬",name:"Leaves",  foodKey:"leaves", desc:"Snails, worms, woodlice"},
+  {id:"syrup", emoji:"🍯",name:"Syrup",   foodKey:"syrup",  desc:"Ants, ladybugs"},
+  {id:"meat",  emoji:"🥩",name:"Meat",    foodKey:"meat",   desc:"Spiders, crickets, beetles"},
+];
+
+function openFeedModal(){
+  var html='';
+  FEED_TYPES.forEach(function(ft){
+    var invId='buy_'+ft.id;
+    var inv=invItem(invId);
+    var qty=inv?inv.qty:0;
+    var dis=qty<=0;
+    html+='<div onclick="'+(dis?'':'pickFeed(\''+ft.id+'\')') +'" style="background:var(--surface);border:1px solid '+(dis?'var(--border)':'var(--border2)')+';border-radius:10px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:'+(dis?'default':'pointer')+';opacity:'+(dis?'.4':'1')+';">'+
+      '<div style="font-size:28px">'+ft.emoji+'</div>'+
+      '<div style="font-size:12px;font-weight:700;color:var(--text-bright)">'+ft.name+'</div>'+
+      '<div style="font-size:10px;font-weight:800;color:'+(dis?'var(--text-dim)':'var(--accent)')+'">'+(dis?'none':'×'+qty)+'</div>'+
+    '</div>';
+  });
+  document.getElementById('feedOptions').innerHTML=html;
+  openModal('modalFeed');
+}
+
+function pickFeed(fid){
+  var ft=FEED_TYPES.find(function(f){return f.id===fid;}); if(!ft) return;
+  // проверяем инвентарь
+  var invId='buy_'+ft.id;
+  var inv=invItem(invId);
+  if(!inv||inv.qty<=0){ toast('No '+ft.emoji+' '+ft.name+' in inventory'); return; }
+  closeModal('modalFeed');
+  advanceTime(10);
+  var fed=0;
+  if(S.openJarIid){
+    var j=anyJar(S.openJarIid);
+    if(j) j.cells.forEach(function(c){
+      if(!c.creature) return;
+      var info=DATA.insectData[c.creature];
+      var foods=info&&info.foods?info.foods:[];
+      if(foods.indexOf(ft.foodKey)!==-1){
+        c.hunger=Math.min(100,(c.hunger!=null?c.hunger:100)+100);
+        fed++;
+      }
+    });
+  }
+  if(fed>0){
+    inv.qty--;
+    if(inv.qty<=0) S.inventory=S.inventory.filter(function(i){return i.id!==invId;});
+  }
+  toast(ft.emoji+' '+ft.name+(fed?' — eaten '+fed+'× (-1)':'— nobody eats this'));
+  renderOpenJar(); renderInventory();
+}
+
+/* ════ CELL POPUP ════════════════════════════════════════════════════ */
+function closeCpop(){ document.getElementById('cpopOv').classList.remove('open'); S.cpop=null; }
+
+function renderCpop(){
+  if(!S.cpop) return;
+  var jarIid=S.cpop.jarIid, cellIdx=S.cpop.cellIdx;
+  var item=anyJar(jarIid), cell=item.cells[cellIdx];
+  var cre=cell.creature?creDef(cell.creature):null;
+  var deco=cell.deco?decoDef(cell.deco):null;
+  var pl=cell.plant?(cell.plant==='dead_plant'?{name:'Dead plant',emoji:'🥀'}:plantDef(cell.plant)):null;
+  var content=cre||deco||pl;
+  var otherJars=S.shelf.concat(S.storage).filter(function(j){return j.iid!==jarIid&&freeSlots(j)>0;});
+  if(cell.plant==='dead_plant'){
+    document.getElementById('cpopContent').innerHTML=
+      '<div style="text-align:center;padding:16px 0 8px;">' +
+        '<div style="font-size:36px">🥀</div>' +
+        '<div style="font-size:14px;color:var(--text-bright);font-weight:700;margin-top:8px;">Dead plant</div>' +
+        '<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Dried up from lack of moisture</div>' +
+      '</div>' +
+      '<div class="cpop-actions">' +
+        '<div class="cpa wide red" onclick="removeCell(\''+jarIid+'\','+cellIdx+')">' +
+          '<div class="cpa-icon">🗑️</div><div class="cpa-label">Remove</div>' +
+        '</div>' +
+      '</div>';
+    document.getElementById('cpopOv').classList.add('open');
+    return;
+  }
+  document.getElementById('cpopContent').innerHTML=
+    '<div class="cpop-info">'+
+      '<div class="cpop-info-icon">'+(content?content.emoji:'·')+'</div>'+
+      '<div class="cpop-info-text">'+
+        '<div class="cpop-info-label">'+(cre?'Creature':'Decor')+'</div>'+
+        '<div class="cpop-info-name'+(content?'':' dim')+'">'+(content?content.name:'empty')+'</div>'+
+        (cre?'<div class="cpop-info-val">🪙 '+cre.value+'/day</div>':'')+
+      '</div>'+
+    '</div>'+
+    '<div class="cpop-actions">'+
+      '<div class="cpa'+(content?'':' dis')+'" onclick="'+(content?'startMove(\''+jarIid+'\','+cellIdx+')':'')+'">'+
+        '<div class="cpa-icon">↔️</div><div class="cpa-label">Move<br>in jar</div>'+
+      '</div>'+
+      '<div class="cpa'+((content&&otherJars.length)?'':' dis')+'" onclick="'+((content&&otherJars.length)?'openXfer(\''+jarIid+'\','+cellIdx+')':'')+'">'+
+        '<div class="cpa-icon">🔄</div><div class="cpa-label">Transfer<br>to jar</div>'+
+      '</div>'+
+      '<div class="cpa wide'+(content?' red':' dis')+'" onclick="'+(content?'removeCell(\''+jarIid+'\','+cellIdx+')':'')+'">'+
+        '<div class="cpa-icon">'+(cre?'🚪':'🗑️')+'</div>'+
+        '<div class="cpa-label">'+(cre?'Release':'Remove')+'</div>'+
+      '</div>'+
+    '</div>';
+}
+
+function startMove(jarIid,cellIdx){
+  closeCpop(); S.moveMode=true; S.moveSrcIid=jarIid; S.moveSrcIdx=cellIdx; renderOpenJar();
+}
+
+function openXfer(jarIid,cellIdx){
+  var srcItem=anyJar(jarIid), srcCell=srcItem.cells[cellIdx];
+  var cre=srcCell.creature?creDef(srcCell.creature):null;
+  var deco=srcCell.deco?decoDef(srcCell.deco):null;
+  var pl=srcCell.plant&&srcCell.plant!=='dead_plant'?plantDef(srcCell.plant):null;
+  document.getElementById('xferSub').textContent='Transfer «'+(cre?cre.name:(deco?deco.name:(pl?pl.name:'cell')))+'» в:';
+  var list=document.getElementById('xferList'); list.innerHTML='';
+  var targets=S.shelf.concat(S.storage).filter(function(j){return j.iid!==jarIid;});
+  if(!targets.length){ toast('No other jars'); return; }
+  targets.forEach(function(dst){
+    var def=jarDef(dst.jarId), free=freeSlots(dst);
+    var d=document.createElement('div'); d.className='jpi';
+    if(!free) d.style.opacity='.35';
+    d.innerHTML=
+      '<div style="font-size:26px">'+def.emoji+'</div>'+
+      '<div class="jpi-info"><div class="jpi-name">'+dst.name+'</div>'+
+        '<div class="jpi-meta">'+def.name+(S.storage.some(function(j){return j.iid===dst.iid;})?" · storage":"")+' · '+free+'/'+dst.cells.length+' св.</div></div>';
+    if(free) d.onclick=(function(dstJ,srcI,sc,ci){return function(){
+      var fi=dstJ.cells.findIndex(function(c){return !c.creature&&!c.deco&&!c.plant;});
+      if(fi===-1){ toast('No free cell'); return; }
+      dstJ.cells[fi]={creature:sc.creature||null,deco:sc.deco||null,plant:sc.plant||null,health:sc.health||100,hunger:sc.hunger||null,thirst:sc.thirst||null};
+      srcI.cells[ci]={creature:null,deco:null,plant:null,health:null,hunger:null,thirst:null};
+      closeCpop(); closeModal('modalXfer');
+      renderShelf(); renderOpenJar(); updateIncomeTicker();
+      toast('Moved to '+dstJ.name);
+    };})(dst,srcItem,srcCell,cellIdx);
+    list.appendChild(d);
+  });
+  closeModal('modalXfer'); openModal('modalXfer');
+}
+
+function removeCell(jarIid,cellIdx){
+  var item=anyJar(jarIid), cell=item.cells[cellIdx];
+  var cre=cell.creature?creDef(cell.creature):null;
+  var deco=cell.deco?decoDef(cell.deco):null;
+  if(cre) toast(cre.emoji+' '+cre.name+' — released');
+  else if(deco) toast(deco.emoji+' '+deco.name+' — removedо');
+  item.cells[cellIdx]={creature:null,deco:null,plant:null,health:null,hunger:null,thirst:null};
+  closeCpop(); renderShelf(); renderOpenJar(); updateIncomeTicker(); advanceTime(5);
+}
+
+/* ════ INSECTARIUM ══════════════════════════════════════════════════ */
+function renderInsect(){
+  var el=document.getElementById('insectList'); if(!el) return;
+  el.innerHTML='';
+
+  function makeCard(emoji, name, level_req, value, humidity, subId, diet, bio, friend, foe){
+    var subDf=subId?subDef(subId):null;
+    var friendDef=friend?creDef(friend):null;
+    var foeDef=foe?creDef(foe):null;
+    return '<div style="background:var(--panel);border:1px solid var(--border2);border-radius:12px;padding:12px;margin-bottom:10px;">'+
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+
+        '<div style="font-size:32px">'+emoji+'</div>'+
+        '<div style="flex:1">'+
+          '<div style="font-size:16px;font-weight:800;color:var(--text-bright)">'+name+'</div>'+
+          '<div style="font-size:10px;color:var(--text-dim);margin-top:1px">'+(value>0?'🪙 '+value+'/день · ':'')+' Lv.'+level_req+'</div>'+
+        '</div>'+
+        '<div style="text-align:right;font-size:10px;color:var(--text-dim)">'+
+          '<div>💧 '+humidity+'</div>'+
+          (subDf?'<div style="margin-top:2px">'+subDf.emoji+' '+subDf.name+'</div>':'')+
+        '</div>'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--text-dim);line-height:1.5;margin-bottom:8px">'+bio+'</div>'+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+        '<div style="background:rgba(143,190,58,.1);border:1px solid rgba(143,190,58,.2);border-radius:6px;padding:3px 8px;font-size:10px;color:var(--accent)">'+
+          (value>0?'🥬':'💧')+' '+diet+'</div>'+
+        (friendDef?'<div style="background:rgba(106,176,208,.1);border:1px solid rgba(106,176,208,.2);border-radius:6px;padding:3px 8px;font-size:10px;color:var(--accent3)">❤️ '+friendDef.name+'</div>':'')+
+        (foeDef?'<div style="background:rgba(200,96,96,.1);border:1px solid rgba(200,96,96,.2);border-radius:6px;padding:3px 8px;font-size:10px;color:var(--red)">⚔️ '+foeDef.name+'</div>':'')+
+      '</div>'+
+    '</div>';
+  }
+
+  // ── Насекомые ──
+  el.innerHTML+='<div style="font-family:var(--font-hand);font-size:17px;color:var(--accent2);padding:4px 2px 8px">🐛 Insects</div>';
+  DATA.creatures.forEach(function(cre){
+    var info=DATA.insectData[cre.id]||{};
+    el.innerHTML+=makeCard(cre.emoji,cre.name,cre.level_req,cre.value,
+      info.humidity||'—',info.substrate,info.diet||'—',info.bio||'',info.friend,info.foe);
+  });
+
+  // ── Plants ──
+  el.innerHTML+='<div style="font-family:var(--font-hand);font-size:17px;color:var(--accent2);padding:12px 2px 8px">🌿 Plants</div>';
+  DATA.plants.forEach(function(pl){
+    el.innerHTML+=makeCard(pl.emoji,pl.name,pl.level_req,0,pl.humidity,pl.substrate,pl.diet,pl.bio,null,null);
+  });
+}
+
+/* ════ SHOP ═════════════════════════════════════════════════════════ */
+function renderShop(){
+  var el=document.getElementById('shopItems'); el.innerHTML='';
+  [{id:'container',label:'Containers'},{id:'shelf',label:'Shelf'},{id:'food',label:'Food'},{id:'tool',label:'Tools'}].forEach(function(cat){
+    var items=DATA.shopItems.filter(function(i){return i.cat===cat.id;}); if(!items.length) return;
+    var lbl=document.createElement('div'); lbl.className='shop-cat-label'; lbl.textContent=cat.label; el.appendChild(lbl);
+    items.forEach(function(item){
+      if(item.cat==='shelf'){
+        // show only the next slot
+        var nextSlot=S.shelfSlots-1; // slots 2→0, 3→1, 4→2 (0-indexed purchase)
+        if(item.slotNum!==S.shelfSlots-1) return;
+        if(S.shelfSlots>=5) return;
+      }
+      var owned=item.unique&&hasInv(item.id), afford=S.coins>=item.price;
+      var div=document.createElement('div'); div.className='shop-item';
+      div.innerHTML=
+        '<div class="si-icon">'+item.emoji+'</div>'+
+        '<div class="si-info"><div class="si-name">'+item.name+'</div>'+
+          '<div class="si-desc">'+item.desc+'</div>'+
+          '<div class="si-price">🪙 '+item.price+'</div></div>'+
+        '<button class="si-buy" '+(owned||!afford?'disabled':'')+' onclick="buyItem(\''+item.id+'\')">'+
+          (owned?'Owned':'Buy')+'</button>';
+      el.appendChild(div);
+    });
+  });
+}
+
+function buyItem(id){
+  var item=DATA.shopItems.find(function(i){return i.id===id;}); if(!item) return;
+  if(S.coins<item.price){ toast('Not enough coins 🪙'); return; }
+  if(item.unique&&hasInv(id)){ toast('Already owned'); return; }
+  if(item.cat==='shelf'){
+    if(S.shelfSlots>=5){ toast('Maximum 5 slots'); return; }
+    S.coins-=item.price; S.shelfSlots++;
+    renderHeader(); renderShelf(); toast('🪵 Shelf expanded — '+S.shelfSlots+' slots');
+    saveGame(); return;
+  }
+  S.coins-=item.price; renderHeader();
+  if(item.cat==='container'){
+    var iid='j'+Date.now();
+    var num=S.shelf.length+S.storage.length+1;
+    S.storage.push({iid:iid,jarId:item.jarId,name:item.name+' #'+num,cells:makeCells(item.jarId),substrate:[],humidity:50});
+    toast(item.emoji+' '+item.name+' → на storage 📦');
+  } else {
+    var ex=invItem(id);
+    if(ex&&!item.unique) ex.qty=(ex.qty||1)+(item.qty||1);
+    else S.inventory.push({id:id,name:item.name,emoji:item.emoji,desc:item.desc,qty:item.qty||1});
+    if(id==='buy_pack'){ DATA.locations.find(function(l){return l.id==='forest';}).locked=false; toast('🎒 Backpack bought — forest unlocked!'); }
+    else toast(item.emoji+' '+item.name+' purchased');
+  }
+  advanceTime(5); renderShop(); renderStorageSection(); renderInventory();
+}
+
+/* ════ LOCATION ══════════════════════════════════════════════════════ */
+function renderLocContent(){
+  var wrap=document.getElementById('locContent');
+  if(S.inLocation) renderInsideLoc(wrap); else renderDestPicker(wrap);
+}
+
+function renderDestPicker(wrap){
+  var chosen=locDef(S.chosenLocId);
+  var cards=DATA.locations.map(function(loc){
+    var cls='dest-card'+(loc.locked?' locked':'')+(S.chosenLocId===loc.id?' chosen':'');
+    var click=loc.locked?"toast('🔒 Backpack required')":'selectDest(\''+loc.id+'\')';
+    return '<div class="'+cls+'" onclick="'+click+'">'+
+      '<div class="dest-bg">'+loc.emoji+'</div>'+
+      '<div class="dest-icon">'+loc.emoji+'</div>'+
+      '<div class="dest-info">'+
+        '<div class="dest-name">'+loc.name+'</div>'+
+        '<div class="dest-desc">'+loc.desc+'</div>'+
+        '<div class="dest-tags">'+
+          '<span class="tag tag-time">⏱ '+(loc.timeCost)+' min</span>'+
+          (loc.locked?'<span class="tag tag-lock">🔒 Backpack</span>':'')+
+        '</div>'+
+      '</div>'+
+      (!loc.locked?'<div class="dest-arr">'+(S.chosenLocId===loc.id?'✓':'›')+'</div>':'')+
+    '</div>';
+  }).join('');
+  wrap.innerHTML=
+    '<div class="dest-screen">'+
+      '<div class="dest-title">🗺 Where to?</div>'+
+      '<div class="dest-sub">Choose a location to explore.</div>'+
+      cards+
+      '<button class="go-btn" '+(chosen.locked?'disabled':'')+' onclick="promptJarThenTravel(\''+S.chosenLocId+'\')">'+
+        (chosen.locked?'🔒 Location locked':'🚶 Go — «'+chosen.name+'»')+
+      '</button>'+
+    '</div>';
+}
+
+function selectDest(id){ S.chosenLocId=id; renderLocContent(); }
+
+function promptJarThenTravel(locId){
+  var loc=locDef(locId); if(!loc||loc.locked) return;
+  S._pendingLocId=locId;
+  var list=document.getElementById('pickJarList'); list.innerHTML='';
+  var allJars=S.shelf.concat(S.storage);
+  if(!allJars.length){ list.innerHTML='<div style="color:var(--text-dim);padding:10px 0">No jars</div>'; }
+  allJars.forEach(function(item){
+    var def=jarDef(item.jarId), free=freeSlots(item);
+    var onShelf=S.shelf.some(function(j){return j.iid===item.iid;});
+    var d=document.createElement('div');
+    d.className='jpi'+(S.handJarIid===item.iid?' chosen':'');
+    if(!free) d.style.opacity='.4';
+    d.innerHTML=
+      '<div style="font-size:26px">'+def.emoji+'</div>'+
+      '<div class="jpi-info"><div class="jpi-name">'+item.name+'</div>'+
+        '<div class="jpi-meta">'+def.name+(onShelf?'':' · со storageа')+' · '+free+' free</div></div>'+
+      (S.handJarIid===item.iid?'<div style="color:var(--accent);font-size:18px">✓</div>':'');
+    d.onclick=(function(iid){return function(){
+      S.handJarIid=iid;
+      closeModal('modalPickJar');
+      travelTo(S._pendingLocId);
+    };})(item.iid);
+    list.appendChild(d);
+  });
+  document.querySelector('#modalPickJar .modal-title').textContent='Which jar to bring?';
+  document.querySelector('#modalPickJar .modal-sub').textContent='Choose a jar for exploring «'+loc.name+'»';
+  var noJarBtn=document.getElementById('pickJarNoJar');
+  if(loc.noJarNeeded){
+    noJarBtn.style.display='block';
+    noJarBtn.onclick=function(){ S.handJarIid=null; closeModal('modalPickJar'); travelTo(S._pendingLocId); };
+  } else {
+    noJarBtn.style.display='none';
+  }
+  openModal('modalPickJar');
+}
+
+function openPickJarModal(){
+  var list=document.getElementById('pickJarList'); list.innerHTML='';
+  if(!S.shelf.length){ list.innerHTML='<div style="color:var(--text-dim);padding:10px 0">No jars on shelf</div>'; }
+  S.shelf.forEach(function(item){
+    var def=jarDef(item.jarId), free=freeSlots(item);
+    var d=document.createElement('div');
+    d.className='jpi'+(S.handJarIid===item.iid?' chosen':'');
+    d.innerHTML=
+      '<div style="font-size:26px">'+def.emoji+'</div>'+
+      '<div class="jpi-info"><div class="jpi-name">'+item.name+'</div>'+
+        '<div class="jpi-meta">'+def.name+' · '+free+' free</div></div>'+
+      (S.handJarIid===item.iid?'<div style="color:var(--accent);font-size:18px">✓</div>':'');
+    d.onclick=(function(iid,name){return function(){
+      S.handJarIid=iid; closeModal('modalPickJar'); renderLocContent(); toast(name+' — in hand');
+    };})(item.iid,item.name);
+    list.appendChild(d);
+  });
+  openModal('modalPickJar');
+}
+
+function travelTo(id){
+  if(checkLate()){ closeModal('modalPickJar'); return; }
+  var loc=locDef(id); if(!loc||loc.locked) return;
+  S.inLocation=true; S.chosenLocId=id; S.locCells=[]; S.searching=false;
+  advanceTime(loc.timeCost);
+  document.getElementById('page-location').style.background=loc.bg;
+  renderLocContent();
+}
+
+function leaveLoc(){
+  S.inLocation=false; S.locCells=[]; S.searching=false;
+  advanceTime(locDef(S.chosenLocId).timeCost);
+  document.getElementById('page-location').style.background='var(--bg)';
+  renderLocContent(); toast('Returned home 🏠');
+}
+
+function renderInsideLoc(wrap){
+  var loc=locDef(S.chosenLocId), hi=handItem(), free=hi?freeSlots(hi):0;
+  wrap.innerHTML=
+    '<div class="inside-loc">'+
+      '<div class="loc-topbar">'+
+        '<button class="loc-back" onclick="leaveLoc()">← Leave</button>'+
+        '<div class="loc-title-bar">'+
+          '<div class="loc-name">'+loc.emoji+' '+loc.name+'</div>'+
+          '<div class="loc-sub">⏱ '+(loc.timeCost)+' мин · '+timeStr(S.time)+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="margin:6px 14px 0;display:flex;align-items:center;gap:6px;background:rgba(143,190,58,.05);border:1px solid rgba(143,190,58,.15);border-radius:8px;padding:6px 10px;">'+
+        '<span style="font-size:16px">🫙</span>'+
+        '<span style="flex:1;font-size:12px;font-weight:700;color:var(--accent)">'+(hi?hi.name:'—')+'</span>'+
+        '<span style="font-size:10px;color:var(--text-dim)">'+(hi?free+'/'+hi.cells.length+' free':'')+'</span>'+
+      '</div>'+
+      '<div class="loc-search-wrap">'+
+        '<button class="loc-search-btn" id="locSearchBtn" onclick="doSearch()">'+
+          '<div class="lsb-bar" id="lsbBar"></div>'+
+          '<span id="lsbText">🔍 Look around</span>'+
+        '</button>'+
+      '</div>'+
+      '<div class="loc-grid-wrap"><div class="loc-grid" id="locGrid"></div></div>'+
+    '</div>';
+  renderLocGrid();
+}
+
+function refreshLocHandStrip(){
+  var strip=document.getElementById('locHandStrip'); if(!strip) return;
+  var hi=handItem(), free=hi?freeSlots(hi):0;
+  strip.className='loc-hand-strip '+(hi?'':'empty');
+  strip.querySelector('.lhs-name').textContent=hi?hi.name:'No банки';
+  strip.querySelector('.lhs-name').className='lhs-name '+(hi?'lhs-ok':'lhs-bad');
+  strip.querySelector('.lhs-sub').textContent=hi?free+' cells free':'Tap to pick';
+  var sl=strip.querySelector('.lhs-slots'); if(sl) sl.textContent=hi?free+' св.':'';
+}
+
+function doSearch(){
+  if(S.searching) return;
+  S.searching=true;
+  var loc=locDef(S.chosenLocId);
+  var btn=document.getElementById('locSearchBtn');
+  var bar=document.getElementById('lsbBar');
+  var txt=document.getElementById('lsbText');
+  btn.classList.add('busy'); txt.textContent='🔍 Searching...';
+  requestAnimationFrame(function(){
+    bar.style.transition='width '+(loc.searchTime/1000)+'s linear';
+    bar.style.width='100%';
+  });
+  setTimeout(function(){
+    S.searching=false; btn.classList.remove('busy'); txt.textContent='🔍 Look around again';
+    bar.style.transition='none'; bar.style.width='0';
+    requestAnimationFrame(function(){ bar.style.transition='width '+(loc.searchTime/1000)+'s linear'; });
+    advanceTime(20);
+    S.locCells=genLocCells(loc);
+    renderLocGrid();
+  }, loc.searchTime);
+}
+
+function genLocCells(loc){
+  var density=loc.density||3;
+  var indices=[];
+  while(indices.length<density){
+    var idx=Math.floor(Math.random()*12);
+    if(indices.indexOf(idx)===-1) indices.push(idx);
+  }
+
+  var availSubs=DATA.substrates.filter(function(s){return s.locs.indexOf(loc.id)!==-1;});
+  var availDecos=DATA.decorations.filter(function(d){return d.locs.indexOf(loc.id)!==-1;});
+  var availPlants=DATA.plants.filter(function(p){return p.locs.indexOf(loc.id)!==-1;});
+  // all location creatures available, level affects spawn weight only
+  var availCre=DATA.creatures.filter(function(c){
+    return c.locs.indexOf(loc.id)!==-1;
+  });
+
+  var effCreChance=effectiveChance(loc.creatureChance);
+  var jarChance=loc.jarChance||0;
+
+  var cells=[];
+  for(var i=0;i<12;i++){
+    var uid='lc'+i+'_'+Date.now();
+    if(indices.indexOf(i)===-1){ cells.push({empty:true,uid:uid}); continue; }
+    var roll=Math.random();
+    var pChance=loc.plantChance||0;
+    var coinChance=loc.coinChance||0;
+    if(roll<coinChance){
+      cells.push({foundCoin:true, uid:uid});
+    } else if(roll<coinChance+jarChance){
+      cells.push({foundJar:true, uid:uid});
+    } else if(roll<jarChance+loc.substrateChance && availSubs.length){
+      cells.push({isSubstrate:true, subId:weightedPick(availSubs).id, uid:uid});
+    } else if(roll<jarChance+loc.substrateChance+pChance && availPlants.length){
+      cells.push({isPlant:true, plantId:weightedPick(availPlants).id, uid:uid});
+    } else if(roll<jarChance+loc.substrateChance+pChance+loc.decoChance && availDecos.length){
+      cells.push({isDeco:true, decoId:weightedPick(availDecos).id, uid:uid});
+    } else if(Math.random()<effCreChance && availCre.length){
+      cells.push({creature:weightedPickByLevel(availCre).id, uid:uid});
+    } else if(availDecos.length){
+      cells.push({isDeco:true, decoId:weightedPick(availDecos).id, uid:uid});
+    } else {
+      cells.push({empty:true, uid:uid});
+    }
+  }
+  return cells;
+}
+
+function renderLocGrid(){
+  var grid=document.getElementById('locGrid'); if(!grid) return;
+  grid.innerHTML='';
+  if(!S.locCells.length){
+    grid.innerHTML='<div class="loc-grid-empty-msg">Tap «Look around» 🔍</div>'; return;
+  }
+  var hi=handItem(), canTake=!!(hi&&freeSlots(hi)>0);
+
+  S.locCells.forEach(function(cell,i){
+    var card=document.createElement('div');
+    if(cell.empty){
+      card.className='loc-card lc-empty';
+      card.innerHTML='<div class="lc-thumb"></div>';
+      grid.appendChild(card); return;
+    }
+    card.style.animationDelay=(i*.04)+'s';
+
+    if(cell.foundJar){
+      card.className='loc-card lc-jar';
+      card.innerHTML=
+        '<div class="lc-thumb" style="background:linear-gradient(145deg,#2a1e08,#40300e)">'+
+          '<div class="lc-thumb-cre">🫙</div></div>'+
+        '<div class="lc-label">Jar</div>'+
+        '<button class="lc-take" onclick="takeJarFind(\''+cell.uid+'\',event)">↓</button>';
+      grid.appendChild(card); return;
+    }
+
+    if(cell.isSubstrate){
+      var sd=subDef(cell.subId);
+      card.className='loc-card';
+      card.innerHTML=
+        '<div class="lc-thumb" style="background:rgba(8,10,6,.55)">'+
+          '<div class="lc-thumb-cre" style="font-size:18px;opacity:.7">'+sd.emoji+'</div>'+
+        '</div>'+
+        '<div class="lc-label">'+sd.name+'</div>'+
+        '<button class="lc-take" '+(!hi||!allCellsEmpty(hi)?'disabled':'')+' onclick="takeSubstrate(\''+cell.uid+'\',event)">↓</button>';
+      grid.appendChild(card); return;
+    }
+
+    if(cell.foundCoin){
+      card.className='loc-card';
+      card.innerHTML=
+        '<div class="lc-thumb" style="background:rgba(20,16,4,.7)">'+
+          '<div class="lc-thumb-cre" style="font-size:22px">🪙</div></div>'+
+        '<div class="lc-label">Моnoneа</div>'+
+        '<button class="lc-take" onclick="takeCoin(\'+cell.uid+\',event)">↓</button>';
+      grid.appendChild(card); return;
+    }
+    if(cell.isPlant){
+      var pd=plantDef(cell.plantId);
+      card.className='loc-card';
+      card.innerHTML=
+        '<div class="lc-thumb" style="background:rgba(8,10,6,.55)">'+
+          '<div class="lc-thumb-cre" style="font-size:22px">'+(pd?pd.emoji:'🌿')+'</div></div>'+
+        '<div class="lc-label">'+(pd?pd.name:'Plant')+'</div>'+
+        '<button class="lc-take" '+(canTake?'':"disabled")+' onclick="takeLocCell(\''+ cell.uid +'\',event)">↓</button>';
+      grid.appendChild(card); return;
+    }
+
+    if(cell.isDeco){
+      var dd=decoDef(cell.decoId);
+      card.className='loc-card';
+      card.innerHTML=
+        '<div class="lc-thumb" style="background:rgba(8,10,6,.55)">'+
+          '<div class="lc-thumb-cre" style="font-size:22px">'+(dd?dd.emoji:'?')+'</div></div>'+
+        '<div class="lc-label">'+(dd?dd.name:'Decor')+'</div>'+
+        '<button class="lc-take" '+(canTake?'':'disabled')+' onclick="takeLocCell(\''+cell.uid+'\',event)">↓</button>';
+      grid.appendChild(card); return;
+    }
+
+    // creature — always visible since pool is already level-filtered
+    var cre=creDef(cell.creature);
+    card.className='loc-card';
+    card.innerHTML=
+      '<div class="lc-thumb"><div class="lc-thumb-cre" style="font-size:22px">'+(cre?cre.emoji:'')+'</div></div>'+
+      '<div class="lc-label">'+(cre?cre.name:'?')+'</div>'+
+      '<button class="lc-take" '+(canTake?'':'disabled')+' onclick="takeLocCell(\''+cell.uid+'\',event)">↓</button>';
+    grid.appendChild(card);
+  });
+}
+
+function takeCoin(uid,e){
+  if(e) e.stopPropagation();
+  S.locCells=S.locCells.map(function(c){return c.uid===uid?{empty:true,uid:c.uid}:c;});
+  S.coins+=1; renderHeader(); advanceTime(2);
+  toast('🪙 +1 моnoneа!');
+  renderLocGrid();
+}
+
+function takeJarFind(uid,e){
+  if(e) e.stopPropagation();
+  S.locCells=S.locCells.map(function(c){return c.uid===uid?{empty:true,uid:c.uid}:c;});
+  var iid='j'+Date.now(), num=S.shelf.length+S.storage.length+1;
+  S.storage.push({iid:iid,jarId:'jar_small',name:'Old jar #'+num,cells:makeCells('jar_small'),substrate:[],humidity:30});
+  advanceTime(5); toast('🫙 Old jar — to storage!');
+  renderLocGrid();
+}
+
+function takeSubstrate(uid,e){
+  if(e) e.stopPropagation();
+  var hi=handItem(); if(!hi){ toast('Grab a jar first!'); return; }
+  if(!allCellsEmpty(hi)){ toast('Substrate goes into an empty jar only 🫙'); return; }
+  var cell=S.locCells.find(function(c){return c.uid===uid;}); if(!cell) return;
+  var sd=subDef(cell.subId);
+  var max=substrateMax(hi);
+  if(!hi.substrate) hi.substrate=[];
+  var fi=-1;
+  for(var i=0;i<max;i++){ if(!hi.substrate[i]){fi=i;break;} }
+  if(fi===-1){ toast('No substrate slot in jar (max '+max+')'); return; }
+  hi.substrate[fi]=cell.subId;
+  S.locCells=S.locCells.map(function(c){return c.uid===uid?{empty:true,uid:c.uid}:c;});
+  advanceTime(5);
+  toast(sd.emoji+' '+sd.name+' — in jar!');
+  renderLocGrid(); refreshLocHandStrip(); renderShelf();
+}
+
+function takeLocCell(uid,e){
+  if(e) e.stopPropagation();
+  var hi=handItem(); if(!hi){ toast('Grab a jar first!'); return; }
+  var cell=S.locCells.find(function(c){return c.uid===uid;}); if(!cell) return;
+  var fi=hi.cells.findIndex(function(c){return !c.creature&&!c.deco&&!c.plant;});
+  if(fi===-1){ toast('В банке none места!'); return; }
+  if(cell.isPlant){
+    hi.cells[fi]={creature:null, deco:null, plant:cell.plantId, health:100, thirst:100};
+    var pd=plantDef(cell.plantId);
+    toast((pd?pd.emoji:'🌿')+' '+(pd?pd.name:'')+' — in jar!');
+  } else {
+    hi.cells[fi]={creature:cell.creature||null, deco:cell.decoId||null, plant:null, health:100, hunger:100, thirst:100};
+    var cre=cell.creature?creDef(cell.creature):null;
+    var deco=cell.decoId?decoDef(cell.decoId):null;
+    toast((cre?cre.emoji:(deco?deco.emoji:'🌱'))+' '+(cre?cre.name:(deco?deco.name:''))+' — in jar!');
+  }
+  S.locCells=S.locCells.map(function(c){return c.uid===uid?{empty:true,uid:c.uid}:c;});
+  advanceTime(5);
+  renderLocGrid(); refreshLocHandStrip(); renderShelf(); updateIncomeTicker();
+}
+
+/* ════ INIT ══════════════════════════════════════════════════════════ */
+renderHeader();
+renderHome();
+</script>
+</body>
+</html>
